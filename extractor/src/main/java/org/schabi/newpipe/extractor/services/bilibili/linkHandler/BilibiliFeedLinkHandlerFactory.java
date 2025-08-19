@@ -16,7 +16,7 @@ public class BilibiliFeedLinkHandlerFactory extends ListLinkHandlerFactory{
         switch (id){
             case "Recommended Videos":
             default:
-                return "https://www.bilibili.com";
+                return "https://api.bilibili.com/x/web-interface/popular?ps=50";
             case "Top 100":
                 return "https://api.bilibili.com/x/web-interface/ranking/v2";
             case "Recommended Lives":
@@ -27,7 +27,7 @@ public class BilibiliFeedLinkHandlerFactory extends ListLinkHandlerFactory{
     @Override
     public String getId(String url) throws ParsingException {
         switch (url){
-            case "https://www.bilibili.com":
+            case "https://api.bilibili.com/x/web-interface/popular?ps=50":
                 return "Recommended Videos";
             case FETCH_RECOMMENDED_LIVES_URL:
                 return "Recommended Lives";
@@ -40,7 +40,7 @@ public class BilibiliFeedLinkHandlerFactory extends ListLinkHandlerFactory{
 
     @Override
     public boolean onAcceptUrl(String url) throws ParsingException {
-        return url.equals("https://www.bilibili.com")
+        return url.equals("https://api.bilibili.com/x/web-interface/popular?ps=50")
                 || url.contains(FETCH_RECOMMENDED_LIVES_URL)
                 || url.equals("https://api.bilibili.com/x/web-interface/ranking/v2");
     }
