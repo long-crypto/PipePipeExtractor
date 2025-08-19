@@ -47,9 +47,9 @@ public class BilibiliFeedExtractor extends KioskExtractor<StreamInfoItem> {
         JsonArray results;
         switch (getId()) {
             case "Recommended Videos":
-                results = response.getObject("data").getArray("item");
+                results = response.getObject("data").getArray("list");
                 for (int i = 0; i < results.size(); i++) {
-                    collector.commit(new BilibiliRecommendedVideosInfoItemExtractor(results.getObject(i)));
+                    collector.commit(new BilibiliTrendingInfoItemExtractor(results.getObject(i)));
                 }
                 break;
             case "Recommended Lives":
@@ -82,7 +82,7 @@ public class BilibiliFeedExtractor extends KioskExtractor<StreamInfoItem> {
             case "Recommended Videos":
             default:
                 try {
-                    response = JsonParser.object().from(getDownloader().get("https://api.bilibili.com/x/web-interface/index/top/rcmd?fresh_type=3", getHeaders(getOriginalUrl())).responseBody());
+                    response = JsonParser.object().from(getDownloader().get("https://api.bilibili.com/x/web-interface/popular?ps=50", getHeaders(getOriginalUrl())).responseBody());
                 } catch (JsonParserException e) {
                     e.printStackTrace();
                 }
