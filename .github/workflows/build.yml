@@ -29,7 +29,7 @@ jobs:
           cd PipePipeExtractor
           git checkout a4a8f7801119a0fa58e87e42dd215c704f939666
           curl -o 2e7cf255cf976a601e3f0da6039e96192e984690.patch https://github.com/long-crypto/PipePipeExtractor/commit/2e7cf255cf976a601e3f0da6039e96192e984690.patch
-          curl -o 2e7cf255cf976a601e3f0da6039e96192e984690.patch https://github.com/long-crypto/PipePipeExtractor/commit/8afc9c39a11f73ee4ab68adc34884e3dba4b84fb.patch
+          curl -o 8afc9c39a11f73ee4ab68adc34884e3dba4b84fb.patch https://github.com/long-crypto/PipePipeExtractor/commit/8afc9c39a11f73ee4ab68adc34884e3dba4b84fb.patch
           patch -p1 -F 3 < 2e7cf255cf976a601e3f0da6039e96192e984690.patch
           patch -p1 -F 3 < 8afc9c39a11f73ee4ab68adc34884e3dba4b84fb.patch
           cd ../PipePipeClient
