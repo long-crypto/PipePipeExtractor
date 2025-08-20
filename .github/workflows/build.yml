@@ -28,7 +28,8 @@ jobs:
           git clone https://github.com/long-crypto/PipePipeExtractor
           cd PipePipeExtractor
           git checkout a4a8f7801119a0fa58e87e42dd215c704f939666
-          git cherry-pick 2e7cf255cf976a601e3f0da6039e96192e984690
+          patch -p1 -F 3 < https://github.com/long-crypto/PipePipeExtractor/commit/2e7cf255cf976a601e3f0da6039e96192e984690.patch
+          patch -p1 -F 3 < https://github.com/long-crypto/PipePipeExtractor/commit/8afc9c39a11f73ee4ab68adc34884e3dba4b84fb.patch
           git cherry-pick 8afc9c39a11f73ee4ab68adc34884e3dba4b84fb
           cd ../PipePipeClient
           git checkout 09204e7916d616841875370e654850fcb897cd10
