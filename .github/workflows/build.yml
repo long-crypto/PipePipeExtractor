@@ -27,7 +27,6 @@ jobs:
           git clone https://github.com/InfinityLoop1308/PipePipeClient
           git clone https://github.com/long-crypto/PipePipeExtractor
           cd PipePipeClient
-          git checkout 3a5e248be447c8605d3a65a665169e376e54d63d
           ./gradlew assembleRelease
 
       - name: Upload APKs
