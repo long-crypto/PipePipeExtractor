@@ -8,7 +8,6 @@ import com.grack.nanojson.JsonParserException;
 import org.schabi.newpipe.extractor.InfoItem;
 import org.schabi.newpipe.extractor.InfoItemExtractor;
 import org.schabi.newpipe.extractor.InfoItemsCollector;
-import org.schabi.newpipe.extractor.MetaInfo;
 import org.schabi.newpipe.extractor.Page;
 import org.schabi.newpipe.extractor.StreamingService;
 import org.schabi.newpipe.extractor.downloader.Downloader;
@@ -24,8 +23,6 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Collections;
-import java.util.List;
 import java.util.function.IntUnaryOperator;
 
 import static org.schabi.newpipe.extractor.services.soundcloud.linkHandler.SoundcloudSearchQueryHandlerFactory.ITEMS_PER_PAGE;
@@ -44,24 +41,7 @@ public class SoundcloudSearchExtractor extends SearchExtractor {
 
     @Nonnull
     @Override
-    public String getSearchSuggestion() {
-        return "";
-    }
-
-    @Override
-    public boolean isCorrectedSearch() {
-        return false;
-    }
-
-    @Nonnull
-    @Override
-    public List<MetaInfo> getMetaInfo() {
-        return Collections.emptyList();
-    }
-
-    @Nonnull
-    @Override
-    public InfoItemsPage<InfoItem> getInitialPage() throws IOException, ExtractionException {
+    public InfoItemsPage<InfoItem> getInitialPageInternal() throws IOException, ExtractionException {
         if (initialSearchObject.getInt(TOTAL_RESULTS) > ITEMS_PER_PAGE) {
             return new InfoItemsPage<>(
                     collectItems(initialSearchObject.getArray(COLLECTION)),
@@ -73,7 +53,7 @@ public class SoundcloudSearchExtractor extends SearchExtractor {
     }
 
     @Override
-    public InfoItemsPage<InfoItem> getPage(final Page page) throws IOException,
+    public InfoItemsPage<InfoItem> getPageInternal(final Page page) throws IOException,
             ExtractionException {
         if (page == null || isNullOrEmpty(page.getUrl())) {
             throw new IllegalArgumentException("Page doesn't contain an URL");
