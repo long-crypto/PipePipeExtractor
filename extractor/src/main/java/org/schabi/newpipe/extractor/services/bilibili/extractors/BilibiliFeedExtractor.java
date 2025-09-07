@@ -82,7 +82,26 @@ public class BilibiliFeedExtractor extends KioskExtractor<StreamInfoItem> {
             case "Recommended Videos":
             default:
                 try {
-                    response = JsonParser.object().from(getDownloader().get("https://api.bilibili.com/x/web-interface/popular?ps=50", getHeaders(getOriginalUrl())).responseBody());
+                    JsonArray merged = new JsonArray();
+                    int totalPages = 10;
+                    int ps = 50;
+                    for (int pn = 1; pn <= totalPages; pn++) {
+                        String url = "https://api.bilibili.com/x/web-interface/popular?ps=" + ps + "&pn=" + pn;
+                        String body = getDownloader().get(url, getHeaders(getOriginalUrl())).responseBody();
+                        JsonObject pageObj = JsonParser.object().from(body);
+                        JsonObject dataObj = pageObj.getObject("data");
+                        JsonArray listArr = dataObj.getArray("list");
+                        for (int i = 0; i < listArr.size(); i++) {
+                            merged.add(listArr.getObject(i));
+                        }
+                    }
+                    response = new JsonObject();
+                    response.put("code", 0);
+                    response.put("message", "0");
+                    response.put("ttl", 1);
+                    JsonObject dataObj = new JsonObject();
+                    dataObj.put("list", merged);
+                    response.put("data", dataObj);
                 } catch (JsonParserException e) {
                     e.printStackTrace();
                 }
@@ -103,5 +122,4 @@ public class BilibiliFeedExtractor extends KioskExtractor<StreamInfoItem> {
                 break;
         }
     }
-
 }
