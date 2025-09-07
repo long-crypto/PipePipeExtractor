@@ -85,12 +85,28 @@ public class BilibiliFeedExtractor extends KioskExtractor<StreamInfoItem> {
             case "Recommended Videos":
             default:
                 try {
-                    for (int pn = 1; pn <= 10; pn++) {
+                JsonArray mergedList = new JsonArray();
+                JsonObject firstPageResponse = null;
+                for (int pn = 1; pn <= 10; pn++) {
                     String apiUrl = String.format("https://api.bilibili.com/x/web-interface/popular?ps=50&pn=%d", pn);
                     String responseBody = getDownloader().get(apiUrl, getHeaders(getOriginalUrl())).responseBody();
                     JsonObject pageResponse = JsonParser.object().from(responseBody);
-                    responseList.add(pageResponse);
+                    if (firstPageResponse == null) {
+                        firstPageResponse = pageResponse;
                     }
+                    JsonArray list = pageResponse.getObject("data").getArray("list");
+                    if (list != null) {
+                        for (int i = 0; i < list.size(); i++) {
+                            mergedList.add(list.get(i));
+                        }
+                    }
+                }
+                if (firstPageResponse != null) {
+                    JsonObject mergedData = firstPageResponse.getObject("data").deepClone();
+                    mergedData.put("list", mergedList);
+                    response = firstPageResponse.deepClone();
+                    response.put("data", mergedData);
+                }
                 } catch (JsonParserException e) {
                     e.printStackTrace();
                 }
