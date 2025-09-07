@@ -87,7 +87,7 @@ public class BilibiliFeedExtractor extends KioskExtractor<StreamInfoItem> {
                         String responseBody = getDownloader().get(apiUrl, getHeaders(getOriginalUrl())).responseBody();
                         Object pageResponse = JsonParser.object().from(responseBody);
                         allResponses.add(pageResponse);
-                    ｝
+                    }
                     response = allResponses;
                 } catch (JsonParserException e) {
                     e.printStackTrace();
