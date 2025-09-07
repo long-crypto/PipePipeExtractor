@@ -3,6 +3,8 @@ package org.schabi.newpipe.extractor.services.bilibili.extractors;
 import static org.schabi.newpipe.extractor.services.bilibili.BilibiliService.getHeaders;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.grack.nanojson.JsonArray;
 import com.grack.nanojson.JsonObject;
