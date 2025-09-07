@@ -78,20 +78,19 @@ public class BilibiliFeedExtractor extends KioskExtractor<StreamInfoItem> {
         return null;
     }
 
+    private List<JsonObject> responseList = new ArrayList<>();
     @Override
     public void onFetchPage(Downloader downloader) throws IOException, ExtractionException {
         switch (getId()) {
             case "Recommended Videos":
             default:
                 try {
-                    List<Object> allResponses = new ArrayList<>();
                     for (int pn = 1; pn <= 10; pn++) {
-                        String apiUrl = String.format("https://api.bilibili.com/x/web-interface/popular?ps=50&pn=%d", pn);
-                        String responseBody = getDownloader().get(apiUrl, getHeaders(getOriginalUrl())).responseBody();
-                        Object pageResponse = JsonParser.object().from(responseBody);
-                        allResponses.add(pageResponse);
+                    String apiUrl = String.format("https://api.bilibili.com/x/web-interface/popular?ps=50&pn=%d", pn);
+                    String responseBody = getDownloader().get(apiUrl, getHeaders(getOriginalUrl())).responseBody();
+                    JsonObject pageResponse = JsonParser.object().from(responseBody);
+                    responseList.add(pageResponse);
                     }
-                    response = allResponses;
                 } catch (JsonParserException e) {
                     e.printStackTrace();
                 }
