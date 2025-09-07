@@ -82,7 +82,13 @@ public class BilibiliFeedExtractor extends KioskExtractor<StreamInfoItem> {
             case "Recommended Videos":
             default:
                 try {
-                    response = JsonParser.object().from(getDownloader().get("https://api.bilibili.com/x/web-interface/popular?ps=50", getHeaders(getOriginalUrl())).responseBody());
+                    for (int pn = 1; pn <= 10; pn++) {
+                        String apiUrl = String.format("https://api.bilibili.com/x/web-interface/popular?ps=50&pn=%d", pn);
+                        String responseBody = getDownloader().get(apiUrl, getHeaders(getOriginalUrl())).responseBody();
+                        Object pageResponse = JsonParser.object().from(responseBody);
+                        allResponses.add(pageResponse);
+                    ｝
+                    response = allResponses;
                 } catch (JsonParserException e) {
                     e.printStackTrace();
                 }
