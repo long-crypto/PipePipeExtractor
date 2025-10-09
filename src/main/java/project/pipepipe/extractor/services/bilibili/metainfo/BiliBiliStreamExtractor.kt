@@ -1,0 +1,269 @@
+package project.pipepipe.extractor.services.bilibili.metainfo
+
+import com.fasterxml.jackson.databind.JsonNode
+import project.pipepipe.extractor.Extractor
+import project.pipepipe.extractor.ExtractorContext
+import project.pipepipe.extractor.Router.setType
+import project.pipepipe.extractor.exceptions.ContentNotAvailableException
+import project.pipepipe.extractor.exceptions.GeographicRestrictionException
+import project.pipepipe.extractor.exceptions.PaidContentException
+import project.pipepipe.extractor.services.bilibili.BiliBiliLinks
+import project.pipepipe.extractor.services.bilibili.BiliBiliLinks.DANMAKU_RAW_URL
+import project.pipepipe.extractor.services.bilibili.BiliBiliLinks.VIDEO_BASE_URL
+import project.pipepipe.extractor.services.bilibili.BiliBiliUrlParser
+import project.pipepipe.extractor.services.bilibili.BilibiliService
+import project.pipepipe.extractor.services.bilibili.Utils
+import project.pipepipe.shared.state.State
+import project.pipepipe.shared.state.StreamExtractState
+import project.pipepipe.extractor.utils.UtilsOld
+import project.pipepipe.extractor.utils.createMultiStreamDashManifest
+import project.pipepipe.shared.infoitem.CommentInfo
+import project.pipepipe.shared.infoitem.RelatedItemInfo
+import project.pipepipe.shared.infoitem.StaffInfo
+import project.pipepipe.shared.infoitem.StreamInfo
+import project.pipepipe.shared.infoitem.helper.stream.AudioStream
+import project.pipepipe.shared.infoitem.helper.stream.Description
+import project.pipepipe.shared.infoitem.helper.stream.VideoStream
+import project.pipepipe.shared.job.ClientTask
+import project.pipepipe.shared.job.ExtractResult
+import project.pipepipe.shared.job.JobStepResult
+import project.pipepipe.shared.job.Payload
+import project.pipepipe.shared.job.RequestMethod
+import project.pipepipe.shared.job.TaskResult
+import project.pipepipe.shared.utils.json.asJson
+import project.pipepipe.shared.utils.json.requireArray
+import project.pipepipe.shared.utils.json.requireInt
+import project.pipepipe.shared.utils.json.requireLong
+import project.pipepipe.shared.utils.json.requireObject
+import project.pipepipe.shared.utils.json.requireString
+import kotlin.collections.map
+
+enum class ContentType {
+    FREE,
+    PREMIUM
+}
+
+enum class PaymentStatus {
+    FREE,
+    PAID
+}
+
+enum class LiveStatus(val code: Int) {
+    NOT_STARTED(0),
+    LIVE(1),
+    ROUND_PLAY(2)
+}
+
+enum class PremiumContentType {
+    SEASON,
+    EPISODE
+}
+
+
+class BiliBiliStreamExtractor(
+    url: String,
+) : Extractor<StreamInfo, Nothing>(url) {
+    val id = url.split("/").last().split("?")[0]
+    lateinit var bvid: String
+
+    override suspend fun fetchInfo(
+        sessionId: String,
+        currentState: State?,
+        clientResults: List<TaskResult>?,
+        cookie: String?
+    ): JobStepResult {
+        val headers = BilibiliService.getHeaders(url, cookie!!)
+        bvid = Utils.getPureBV(id)
+        val apiUrl = Utils.getUrl(url, id)
+
+        val loggedHeaders = BilibiliService.getLoggedHeadersOrNull(url, "ai_subtitle")
+        val requestHeaders = loggedHeaders ?: headers
+
+        if (currentState == null) {
+            return JobStepResult.ContinueWith(listOf(
+                ClientTask(taskId = "info", payload = Payload(RequestMethod.GET, apiUrl, requestHeaders)),
+                ClientTask(taskId = "tags", payload = Payload(
+                    RequestMethod.GET,
+                    BiliBiliLinks.FETCH_TAGS_URL + Utils.getPureBV(id),
+                    headers = headers
+                )),
+            ), state = StreamExtractState(
+                0, StreamInfo(
+                    url,
+                    "BILIBILI"
+                )
+            ))
+        } else if (currentState.step == 0) {
+            return step_1(sessionId, currentState as StreamExtractState, clientResults!!, cookie)
+        } else if (currentState.step == 1) {
+            return step_final(sessionId, currentState as StreamExtractState, clientResults!!)
+        } else throw IllegalArgumentException()
+    }
+
+    suspend fun step_1(
+        sessionId: String,
+        currentState: StreamExtractState,
+        clientResults: List<TaskResult>,
+        cookie: String
+    ): JobStepResult {
+        val watchData = clientResults.first { it.taskId == "info" }.result!!.asJson().requireObject("data")
+        val tagData = clientResults.first { it.taskId == "tags" }.result!!.asJson().requireArray("data")
+        val pageNumString = UtilsOld.getQueryValue(
+            UtilsOld.stringToURL(url),
+            "p"
+        )
+        val pageNum = pageNumString?.toIntOrNull() ?: 1
+
+        val streamInfo = StreamInfo("$VIDEO_BASE_URL$bvid?p=$pageNum", "BILIBILI")
+        val headers = BilibiliService.getHeaders(url, cookie)
+
+        val page = watchData.requireArray("pages")[pageNum - 1]
+        val cid = page.requireLong("cid")
+        setMetadata(watchData, streamInfo, page, tagData, sessionId, cookie, cid)
+        val baseUrl = BiliBiliLinks.FREE_VIDEO_API_URL
+        val streamParams = linkedMapOf<String, String>().apply {
+            put("avid", Utils.bv2av(bvid).toString())
+            put("bvid", bvid)
+            put("cid", cid.toString())
+            put("qn", "120")
+            put("fnver", "0")
+            put("fnval", "4048")
+            put("fourk", "1")
+            put("web_location", "1315873")
+            put("try_look", "1")
+            putAll(Utils.getDmImgParams())
+        }
+
+        val streamRequestHeaders = headers.toMutableMap()
+//        if (ExtractorContext.ServiceList.BiliBili.hasTokens) {
+//            streamRequestHeaders["Cookie"] = ExtractorContext.ServiceList.BiliBili.tokens!!
+//            streamParams.remove("try_look")
+//        }
+
+        return JobStepResult.ContinueWith(listOf(ClientTask("stream_data", Payload(
+            RequestMethod.GET, Utils.getWbiResult(baseUrl, streamParams, cookie), headers = streamRequestHeaders
+        ))), state = StreamExtractState(1, streamInfo))
+    }
+
+    fun step_final(sessionId: String, currentState: StreamExtractState, clientResults: List<TaskResult>): JobStepResult {
+        val playData = clientResults.first { it.taskId == "stream_data" }.result!!.asJson()
+        val streamInfo = currentState.streamInfo
+        when (playData.requireInt("code")) {
+            0 -> {} // Success
+            -10403 -> {
+                val message = playData.requireString("message")
+                if (message.contains("地区")) {
+                    throw GeographicRestrictionException(message)
+                }
+                throw ContentNotAvailableException(message)
+            }
+            else -> {
+                val message = playData.requireString("message")
+                if (message.contains("地区")) {
+                    throw GeographicRestrictionException(message)
+                }
+                throw ContentNotAvailableException(message)
+            }
+        }
+
+        val streamData = playData.requireObject("data").requireObject("dash")
+
+        if (streamData.size() == 0 ||
+            (streamInfo.isPaid && (streamData.requireArray("video").size() + streamData.requireArray("audio").size() == 0))) {
+            throw PaidContentException("Paid content")
+        }
+
+        streamInfo.dashManifest = createMultiStreamDashManifest(
+            streamInfo.duration!! * 1.0,
+            streamData.requireArray("video").map {
+                VideoStream(
+                    it.requireInt("id").toString(),
+                    it.requireString("baseUrl"),
+                    it.requireString("mimeType"),
+                    it.requireString("codecs"),
+                    it.requireLong("bandwidth"),
+                    it.requireInt("width"),
+                    it.requireInt("height"),
+                    it.requireString("frameRate"),
+                    it.requireString("/SegmentBase/indexRange"),
+                    it.requireString("/SegmentBase/Initialization"),
+                )
+            }, streamData.requireArray("audio").map {
+                AudioStream(
+                    it.requireInt("id").toString(),
+                    it.requireString("baseUrl"),
+                    it.requireString("mimeType"),
+                    it.requireString("codecs"),
+                    it.requireLong("bandwidth"),
+                    it.requireString("/SegmentBase/indexRange"),
+                    it.requireString("/SegmentBase/Initialization"),
+                )
+            })
+        return JobStepResult.CompleteWith(ExtractResult(streamInfo, errors))
+    }
+    fun setMetadata(
+        watch: JsonNode,
+        streamInfo: StreamInfo,
+        page: JsonNode,
+        tagData: JsonNode,
+        sessionId: String,
+        cookie: String,
+        cid: Long
+    ) {
+        val title = watch.requireString("title")
+        streamInfo.name = if (watch.requireArray("pages").size() > 1) {
+            "P${page.requireInt("page")} ${page.requireString("part")} | $title"
+        } else {
+            title
+        }
+
+        streamInfo.thumbnailUrl = watch.requireString("pic").replace("http:", "https:")
+
+        val owner = watch.requireObject("owner")
+        streamInfo.uploaderName = owner.requireString("name")
+        streamInfo.uploaderUrl = "https://space.bilibili.com/${owner.requireLong("mid")}"
+        streamInfo.uploaderAvatarUrl = owner.requireString("face").replace("http:", "https:")
+
+        val stat = watch.requireObject("stat")
+        streamInfo.viewCount = stat.requireLong("view")
+        streamInfo.likeCount = stat.requireLong("like")
+        streamInfo.description = Description(watch.requireString("desc"), Description.Companion.PLAIN_TEXT)
+        streamInfo.uploadDate = watch.requireLong("pubdate")
+
+        val staffArray = watch.get("staff")
+        streamInfo.staffs = if (staffArray != null && staffArray.isArray && staffArray.size() > 0) {
+            staffArray.map { staff ->
+                StaffInfo(
+                    "https://space.bilibili.com/${staff.requireLong("mid")}",
+                    staff.requireString("name"),
+                    staff.requireString("face"),
+                    staff.requireString("title")
+                )
+            }
+        } else {
+            emptyList()
+        }
+
+        streamInfo.stats = stat.fieldNames().asSequence().associateWith {
+            stat.get(it).asText()
+        }
+
+        streamInfo.tags = tagData.map { it.requireString("tag_name") }
+
+
+        streamInfo.startPosition = try {
+            streamInfo.url.split("#timestamp=")[1].toLong()
+        } catch (e: Exception) {
+            0
+        }
+        streamInfo.duration = page.requireLong("duration")
+        streamInfo.isPaid =
+            if (watch.requireObject("rights").requireInt("pay") == 1) true else false
+        streamInfo.commentInfo = safeGet { CommentInfo.builder().url(BiliBiliUrlParser.urlFromCommentsId(BiliBiliUrlParser.parseCommentsId(url)!!, cookie)).serviceId(
+            "BILIBILI").build() }
+        streamInfo.danmakuUrl = "${DANMAKU_RAW_URL}?cid=${cid}"
+        streamInfo.relatedItemInfo = RelatedItemInfo(url.setType("related"))
+        streamInfo.sponsorblockUrl = "sponsorblock://bilibili.raw?id=$bvid"
+        streamInfo.headers = hashMapOf("Referer" to "https://www.bilibili.com")
+    }
+}

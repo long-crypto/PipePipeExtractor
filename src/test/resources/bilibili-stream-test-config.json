@@ -1,0 +1,9 @@
+{
+  "testConfigs": [
+    {
+      "url": "https://www.bilibili.com/video/BV1dv411B7Z4?p=2",
+      "hasPartitions": true,
+      "ignoreSponsorBlockMetaInfo": true
+    }
+  ]
+}

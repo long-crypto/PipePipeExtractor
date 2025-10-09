@@ -1,0 +1,21 @@
+{
+  "excludedFields": [
+    "dislikeCount",
+    "uploaderVerified",
+    "uploaderSubscriberCount",
+    "dashMpdUrl",
+    "hlsUrl",
+    "subtitles",
+    "host",
+    "privacy",
+    "category",
+    "licence",
+    "streamSegments",
+    "metaInfo",
+    "previewFrames",
+    "sponsorBlockMetaInfo",
+    "relatedItemsMetaInfo",
+    "commentMetaInfo",
+    "danmakuMetaInfo"
+  ]
+}
