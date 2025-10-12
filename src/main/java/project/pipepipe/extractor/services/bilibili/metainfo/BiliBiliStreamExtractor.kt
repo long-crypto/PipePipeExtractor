@@ -173,6 +173,10 @@ class BiliBiliStreamExtractor(
             throw PaidContentException("Paid content")
         }
 
+        streamInfo.isPortrait = streamData.requireArray("video")[0].let {
+            it.requireInt("width") < it.requireInt("height")
+        }
+
         streamInfo.dashManifest = createMultiStreamDashManifest(
             streamInfo.duration!! * 1.0,
             streamData.requireArray("video").map {

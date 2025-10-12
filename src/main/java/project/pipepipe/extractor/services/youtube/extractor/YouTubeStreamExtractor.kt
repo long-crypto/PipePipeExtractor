@@ -147,6 +147,10 @@ class YouTubeStreamExtractor(
                                     )
                                 }
                         )
+                        isPortrait = playData.requireArray("/playerResponse/streamingData/adaptiveFormats")
+                            .filter { it.requireString("mimeType").startsWith("video") }[0].let {
+                                it.requireInt("width") < it.requireInt("height")
+                            }
                     }
                     true -> {
                         streamType = StreamType.LIVE_STREAM
