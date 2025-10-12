@@ -15,7 +15,7 @@ plugins {
     id("maven-publish")
 }
 
-version = "5.0.0-alpha1"
+version = "5.0.0-alpha2"
 group = "project.pipepipe"
 
 wire {
