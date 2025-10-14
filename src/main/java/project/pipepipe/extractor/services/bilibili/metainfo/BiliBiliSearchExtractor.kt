@@ -2,6 +2,7 @@ package project.pipepipe.extractor.services.bilibili.metainfo
 
 import project.pipepipe.extractor.base.SearchExtractor
 import project.pipepipe.extractor.services.bilibili.BilibiliService
+import project.pipepipe.extractor.services.bilibili.dataparser.BiliBiliChannelInfoDataParser
 import project.pipepipe.extractor.services.bilibili.dataparser.BiliBiliStreamInfoDataParser
 import project.pipepipe.shared.state.State
 import project.pipepipe.extractor.utils.incrementUrlParam
@@ -48,7 +49,7 @@ class BiliBiliSearchExtractor(url: String): SearchExtractor(url) {
                 when (type) {
                     "video" -> commit<StreamInfo>(BiliBiliStreamInfoDataParser.parseFromStreamInfoJson(item))
 //                    "live_room" -> commit<StreamInfo>(BiliBiliStreamInfoDataParser.parseFromLiveInfoJson(item, 0))
-//                    "bili_user" -> commit<project.pipepipe.shared.infoitem.ChannelInfo>(BiliBiliChannelInfoDataParser.parseFromChannelSearchJson(item))
+                    "bili_user" -> commit{BiliBiliChannelInfoDataParser.parseFromChannelSearchJson(item)}
 //                    "media_bangumi", "media_ft" -> commit<StreamInfo>(BiliBiliStreamInfoDataParser.parseFromPremiumContentJson(item))
                 }
             }
