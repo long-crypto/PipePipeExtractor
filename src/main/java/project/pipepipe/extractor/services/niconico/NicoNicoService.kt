@@ -83,6 +83,7 @@ class NicoNicoService(id: String): StreamingService(id)  {
             availableSearchTypes = listOf(
                 SearchType("video", SEARCH_URL, sortFilters),
                 SearchType("playlist", "$PLAYLIST_SEARCH_API_URL&keyword=", playListSortFilters),
-            )
+            ),
+            themeColor = "#9e9e9e"
         )
 }

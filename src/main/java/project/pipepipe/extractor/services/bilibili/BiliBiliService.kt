@@ -180,6 +180,7 @@ class BilibiliService(id: String) : StreamingService(id) {
                 BiliBiliLinks.FETCH_RECOMMENDED_LIVES_URL,
                 BiliBiliLinks.FETCH_TOP_100_URL
             ),
-            feedFetchInterval = 3000
+            feedFetchInterval = 3000,
+            themeColor = "#FB7299"
         )
 }

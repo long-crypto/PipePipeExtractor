@@ -91,6 +91,7 @@ class YouTubeService(id: String) : StreamingService(id)  {
                 SearchType("channel", "$SEARCH_RAW_URL?type=channel&query=", listOf(sortByFilterGroup)),
                 SearchType("playlist", "$SEARCH_RAW_URL?type=playlist&query=", listOf(sortByFilterGroup)),
                 SearchType("movie", "$SEARCH_RAW_URL?type=movie&query=", sortFilters),
-            )
+            ),
+            themeColor = "#e53935"
         )
 }
