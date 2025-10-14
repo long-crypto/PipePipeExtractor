@@ -142,7 +142,7 @@ class BilibiliService(id: String) : StreamingService(id) {
             defaultFilter = SearchFilterItem("sort_overall", "order=totalrank")
         ),
         SearchFilterGroup(
-            groupName = "Duration",
+            groupName = "duration",
             onlyOneCheckable = true,
             availableSearchFilterItems = listOf(
                 SearchFilterItem("< 10 min", "duration=1"),
