@@ -1,7 +1,7 @@
 package project.pipepipe.extractor.services.youtube.dataparser
 
 import project.pipepipe.extractor.services.youtube.YouTubeUrlParser
-import project.pipepipe.shared.stringToURI
+import project.pipepipe.extractor.utils.RequestHelper.stringToURI
 import java.util.regex.Pattern
 
 object YouTubeChannelIdParser {

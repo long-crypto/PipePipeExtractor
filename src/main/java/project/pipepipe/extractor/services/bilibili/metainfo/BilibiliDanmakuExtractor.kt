@@ -7,7 +7,7 @@ import project.pipepipe.extractor.services.bilibili.BiliBiliLinks
 import project.pipepipe.extractor.services.bilibili.BilibiliService
 import project.pipepipe.extractor.services.bilibili.Utils
 import project.pipepipe.extractor.services.bilibili.dataparser.BiliBIliDanmakuInfoDataParser
-import project.pipepipe.shared.getQueryValue
+import project.pipepipe.extractor.utils.RequestHelper.getQueryValue
 import project.pipepipe.shared.job.ClientTask
 import project.pipepipe.shared.job.ExtractResult
 import project.pipepipe.shared.job.JobStepResult

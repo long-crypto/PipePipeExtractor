@@ -6,7 +6,7 @@ import project.pipepipe.extractor.services.youtube.YouTubeLinks.BROWSE_URL
 import project.pipepipe.extractor.services.youtube.YouTubeRequestHelper.WEB_HEADER
 import project.pipepipe.extractor.services.youtube.YouTubeRequestHelper.getChannelInfoBody
 import project.pipepipe.extractor.services.youtube.dataparser.YouTubePlaylistInfoDataParser.parseFromLockupMetadataViewModel
-import project.pipepipe.shared.getQueryValue
+import project.pipepipe.extractor.utils.RequestHelper.getQueryValue
 import project.pipepipe.shared.infoitem.ChannelTabType
 import project.pipepipe.shared.infoitem.PlaylistInfo
 import project.pipepipe.shared.job.ClientTask

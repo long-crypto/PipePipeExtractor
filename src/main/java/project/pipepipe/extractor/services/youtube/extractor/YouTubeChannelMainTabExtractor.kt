@@ -11,13 +11,13 @@ import project.pipepipe.extractor.services.youtube.YouTubeRequestHelper.getConti
 import project.pipepipe.extractor.services.youtube.dataparser.YouTubeChannelIdParser.parseChannelId
 import project.pipepipe.extractor.services.youtube.dataparser.YouTubeStreamInfoDataParser.parseVideoRenderer
 import project.pipepipe.extractor.utils.parseNumberWithSuffix
-import project.pipepipe.shared.getQueryValue
+import project.pipepipe.extractor.utils.RequestHelper.getQueryValue
 import project.pipepipe.shared.infoitem.ChannelInfo
 import project.pipepipe.shared.infoitem.ChannelTabInfo
 import project.pipepipe.shared.infoitem.ChannelTabType
 import project.pipepipe.shared.infoitem.StreamInfo
 import project.pipepipe.shared.job.*
-import project.pipepipe.shared.replaceQueryValue
+import project.pipepipe.extractor.utils.RequestHelper.replaceQueryValue
 import project.pipepipe.shared.state.PlainState
 import project.pipepipe.shared.state.State
 import project.pipepipe.extractor.ExtractorContext.asJson

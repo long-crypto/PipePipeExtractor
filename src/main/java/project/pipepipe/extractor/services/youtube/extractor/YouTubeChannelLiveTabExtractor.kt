@@ -6,7 +6,7 @@ import project.pipepipe.extractor.services.youtube.YouTubeLinks.TAB_RAW_URL
 import project.pipepipe.extractor.services.youtube.YouTubeRequestHelper.WEB_HEADER
 import project.pipepipe.extractor.services.youtube.YouTubeRequestHelper.getChannelInfoBody
 import project.pipepipe.extractor.services.youtube.dataparser.YouTubeStreamInfoDataParser.parseVideoRenderer
-import project.pipepipe.shared.getQueryValue
+import project.pipepipe.extractor.utils.RequestHelper.getQueryValue
 import project.pipepipe.shared.infoitem.ChannelTabType
 import project.pipepipe.shared.infoitem.StreamInfo
 import project.pipepipe.shared.job.ClientTask

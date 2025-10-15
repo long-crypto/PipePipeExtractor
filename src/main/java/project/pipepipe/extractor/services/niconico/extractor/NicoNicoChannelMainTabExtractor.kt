@@ -6,7 +6,7 @@ import project.pipepipe.extractor.ExtractorContext
 import project.pipepipe.extractor.services.niconico.NicoNicoService.Companion.GOOGLE_HEADER
 import project.pipepipe.extractor.services.niconico.dataparser.NicoNicoStreamInfoDataParser.parseFromRSSXml
 import project.pipepipe.extractor.utils.incrementUrlParam
-import project.pipepipe.shared.getQueryValue
+import project.pipepipe.extractor.utils.RequestHelper.getQueryValue
 import project.pipepipe.shared.infoitem.ChannelInfo
 import project.pipepipe.shared.infoitem.ChannelTabInfo
 import project.pipepipe.shared.infoitem.ChannelTabType

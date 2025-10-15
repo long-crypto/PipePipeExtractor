@@ -1,7 +1,6 @@
 package project.pipepipe.extractor.services.youtube
 
 import project.pipepipe.extractor.Extractor
-import project.pipepipe.extractor.services.youtube.YouTubeLinks.BASE_URL
 import project.pipepipe.extractor.services.youtube.YouTubeLinks.COMMENT_RAW_URL
 import project.pipepipe.extractor.services.youtube.YouTubeLinks.PLAYLIST_BASE_URL
 import project.pipepipe.extractor.services.youtube.YouTubeLinks.REPLY_RAW_URL
@@ -16,7 +15,7 @@ import project.pipepipe.extractor.services.youtube.extractor.YouTubeCommentExtra
 import project.pipepipe.extractor.services.youtube.extractor.YouTubePlaylistExtractor
 import project.pipepipe.extractor.services.youtube.extractor.YouTubeSearchExtractor
 import project.pipepipe.extractor.services.youtube.extractor.YouTubeStreamExtractor
-import project.pipepipe.shared.getQueryValue
+import project.pipepipe.extractor.utils.RequestHelper.getQueryValue
 
 object YouTubeUrlRouter {
     fun route(url: String): Extractor<*,*>? {

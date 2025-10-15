@@ -5,7 +5,7 @@ import kotlinx.serialization.json.Json
 import project.pipepipe.extractor.Extractor
 import project.pipepipe.extractor.utils.RandomStringFromAlphabetGenerator
 import project.pipepipe.extractor.utils.UtilsOld
-import project.pipepipe.shared.getQueryValue
+import project.pipepipe.extractor.utils.RequestHelper.getQueryValue
 import project.pipepipe.shared.infoitem.Info
 import project.pipepipe.shared.infoitem.SponsorBlockSegmentInfo
 import project.pipepipe.shared.infoitem.helper.SponsorBlockCategory

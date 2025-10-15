@@ -7,7 +7,7 @@ import project.pipepipe.extractor.services.youtube.YouTubeRequestHelper.getConti
 import project.pipepipe.extractor.services.youtube.YouTubeRequestHelper.getPlaylistInfoBody
 import project.pipepipe.extractor.services.youtube.dataparser.YouTubeStreamInfoDataParser.parseFromPlaylistVideoRenderer
 import project.pipepipe.extractor.utils.extractDigitsAsLong
-import project.pipepipe.shared.getQueryValue
+import project.pipepipe.extractor.utils.RequestHelper.getQueryValue
 import project.pipepipe.shared.infoitem.PlaylistInfo
 import project.pipepipe.shared.infoitem.StreamInfo
 import project.pipepipe.shared.job.ClientTask
@@ -18,7 +18,7 @@ import project.pipepipe.shared.job.Payload
 import project.pipepipe.shared.job.RequestMethod
 import project.pipepipe.shared.job.TaskResult
 import project.pipepipe.shared.job.isDefaultTask
-import project.pipepipe.shared.replaceQueryValue
+import project.pipepipe.extractor.utils.RequestHelper.replaceQueryValue
 import project.pipepipe.shared.state.PlainState
 import project.pipepipe.shared.state.State
 import project.pipepipe.extractor.ExtractorContext.asJson

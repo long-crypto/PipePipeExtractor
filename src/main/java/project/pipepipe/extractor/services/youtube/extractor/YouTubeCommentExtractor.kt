@@ -6,7 +6,7 @@ import project.pipepipe.extractor.services.youtube.YouTubeLinks.NEXT_URL
 import project.pipepipe.extractor.services.youtube.YouTubeRequestHelper.WEB_HEADER
 import project.pipepipe.extractor.services.youtube.YouTubeRequestHelper.getContinuationBody
 import project.pipepipe.extractor.services.youtube.dataparser.YouTubeCommentInfoDataParser
-import project.pipepipe.shared.getQueryValue
+import project.pipepipe.extractor.utils.RequestHelper.getQueryValue
 import project.pipepipe.shared.infoitem.CommentInfo
 import project.pipepipe.shared.job.ClientTask
 import project.pipepipe.shared.job.ExtractResult

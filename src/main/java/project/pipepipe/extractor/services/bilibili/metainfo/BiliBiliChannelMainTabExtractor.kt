@@ -10,7 +10,7 @@ import project.pipepipe.extractor.services.bilibili.BilibiliService
 import project.pipepipe.extractor.services.bilibili.Utils.buildUserVideosUrlWebAPI
 import project.pipepipe.extractor.services.bilibili.dataparser.BiliBiliStreamInfoDataParser
 import project.pipepipe.extractor.utils.incrementUrlParam
-import project.pipepipe.shared.getQueryValue
+import project.pipepipe.extractor.utils.RequestHelper.getQueryValue
 import project.pipepipe.shared.infoitem.ChannelInfo
 import project.pipepipe.shared.infoitem.ChannelTabInfo
 import project.pipepipe.shared.infoitem.ChannelTabType
