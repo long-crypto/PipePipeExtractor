@@ -6,7 +6,7 @@ import project.pipepipe.extractor.services.bilibili.dataparser.BiliBiliChannelIn
 import project.pipepipe.extractor.services.bilibili.dataparser.BiliBiliStreamInfoDataParser
 import project.pipepipe.shared.state.State
 import project.pipepipe.extractor.utils.incrementUrlParam
-import project.pipepipe.shared.utils.json.asJson
+import project.pipepipe.extractor.ExtractorContext.asJson
 import project.pipepipe.shared.utils.json.requireArray
 import project.pipepipe.shared.utils.json.requireObject
 import project.pipepipe.shared.utils.json.requireString

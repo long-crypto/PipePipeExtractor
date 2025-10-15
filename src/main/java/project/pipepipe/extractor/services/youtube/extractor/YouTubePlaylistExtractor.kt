@@ -21,7 +21,7 @@ import project.pipepipe.shared.job.isDefaultTask
 import project.pipepipe.shared.replaceQueryValue
 import project.pipepipe.shared.state.PlainState
 import project.pipepipe.shared.state.State
-import project.pipepipe.shared.utils.json.asJson
+import project.pipepipe.extractor.ExtractorContext.asJson
 import project.pipepipe.shared.utils.json.requireArray
 import project.pipepipe.shared.utils.json.requireString
 

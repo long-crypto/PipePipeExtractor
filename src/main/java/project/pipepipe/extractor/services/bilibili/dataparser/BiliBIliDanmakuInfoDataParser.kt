@@ -3,16 +3,12 @@ package project.pipepipe.extractor.services.bilibili.dataparser
 import com.fasterxml.jackson.databind.JsonNode
 import org.jsoup.nodes.Element
 import project.pipepipe.extractor.ExtractorContext
-import project.pipepipe.shared.SharedContext
 import project.pipepipe.shared.infoitem.DanmakuInfo
 import project.pipepipe.shared.utils.json.requireArray
 import project.pipepipe.shared.utils.json.requireInt
-import project.pipepipe.shared.utils.json.requireLong
-import project.pipepipe.shared.utils.json.requireObject
 import project.pipepipe.shared.utils.json.requireString
 import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
 
 object BiliBIliDanmakuInfoDataParser {
 //    fun parseFromSuperChatJson(message: JsonNode, startTime: Long): DanmakuInfo {
@@ -51,7 +47,7 @@ object BiliBIliDanmakuInfoDataParser {
         val text = element.text()
         val actualContent = runCatching {
             // Try to parse as JSON array first
-            val jsonArray = SharedContext.objectMapper.readTree(text)
+            val jsonArray = ExtractorContext.objectMapper.readTree(text)
             if (jsonArray.isArray && jsonArray.size() > 4) {
                 jsonArray.requireString(4)
             } else {

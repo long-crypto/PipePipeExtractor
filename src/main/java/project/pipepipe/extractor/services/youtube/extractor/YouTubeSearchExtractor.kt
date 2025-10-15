@@ -8,7 +8,7 @@ import project.pipepipe.extractor.services.youtube.dataparser.YouTubeSearchLinkP
 import project.pipepipe.extractor.services.youtube.dataparser.YouTubeStreamInfoDataParser
 
 import project.pipepipe.shared.state.State
-import project.pipepipe.shared.utils.json.asJson
+import project.pipepipe.extractor.ExtractorContext.asJson
 import project.pipepipe.shared.utils.json.requireArray
 import project.pipepipe.shared.utils.json.requireString
 import project.pipepipe.shared.job.ClientTask

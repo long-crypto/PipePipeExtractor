@@ -7,6 +7,7 @@ package project.pipepipe.extractor
 //import project.pipepipe.extractor.services.soundcloud.SoundcloudService
 //import project.pipepipe.extractor.services.youtube.YoutubeService
 
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
@@ -24,6 +25,7 @@ object ExtractorContext {
         followRedirects = true
     })
     val objectMapper = ObjectMapper()
+    fun String.asJson(): JsonNode = objectMapper.readTree(this)
 
     var preferredLocalization: Localization = Localization.Companion.DEFAULT
     var preferredContentCountry: ContentCountry = ContentCountry.Companion.DEFAULT

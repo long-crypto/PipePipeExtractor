@@ -30,7 +30,7 @@ import project.pipepipe.shared.infoitem.helper.stream.VideoStream
 import project.pipepipe.shared.job.*
 import project.pipepipe.shared.state.CachedExtractState
 import project.pipepipe.shared.state.PlainState
-import project.pipepipe.shared.utils.json.asJson
+import project.pipepipe.extractor.ExtractorContext.asJson
 import project.pipepipe.shared.utils.json.requireArray
 import project.pipepipe.shared.utils.json.requireInt
 import project.pipepipe.shared.utils.json.requireLong

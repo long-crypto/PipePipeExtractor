@@ -12,7 +12,7 @@ import project.pipepipe.extractor.services.niconico.NicoNicoService.Companion.is
 import project.pipepipe.extractor.services.niconico.NicoNicoUrlParser.parseStreamId
 import project.pipepipe.shared.state.State
 import project.pipepipe.shared.state.StreamExtractState
-import project.pipepipe.shared.utils.json.asJson
+import project.pipepipe.extractor.ExtractorContext.asJson
 import project.pipepipe.shared.utils.json.requireArray
 import project.pipepipe.shared.utils.json.requireBoolean
 import project.pipepipe.shared.utils.json.requireLong

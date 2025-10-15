@@ -2,10 +2,10 @@ package project.pipepipe.extractor.services.niconico.extractor
 
 import org.jsoup.Jsoup
 import project.pipepipe.extractor.Extractor
+import project.pipepipe.extractor.ExtractorContext
 import project.pipepipe.extractor.services.niconico.NicoNicoService.Companion.GOOGLE_HEADER
 import project.pipepipe.extractor.services.niconico.dataparser.NicoNicoStreamInfoDataParser.parseFromRSSXml
 import project.pipepipe.extractor.utils.incrementUrlParam
-import project.pipepipe.shared.SharedContext
 import project.pipepipe.shared.getQueryValue
 import project.pipepipe.shared.infoitem.ChannelInfo
 import project.pipepipe.shared.infoitem.ChannelTabInfo
@@ -33,7 +33,7 @@ class NicoNicoChannelMainTabExtractor(url: String) : Extractor<ChannelInfo, Stre
                 ClientTask("videos", Payload(RequestMethod.GET, "$safeUrl/video?rss=2.0&page=1", GOOGLE_HEADER))
             ), PlainState(0))
         } else {
-            val infoData = SharedContext.objectMapper.readTree(
+            val infoData = ExtractorContext.objectMapper.readTree(
                 Jsoup.parse(clientResults!!.first { it.taskId == "info" }.result!!)
                 .getElementById("js-initial-userpage-data")!!
                 .attr("data-initial-data")

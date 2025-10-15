@@ -1,6 +1,7 @@
 package project.pipepipe.extractor.services.youtube.extractor
 
 import project.pipepipe.extractor.Extractor
+import project.pipepipe.extractor.ExtractorContext.asJson
 import project.pipepipe.extractor.services.youtube.YouTubeLinks.BROWSE_URL
 import project.pipepipe.extractor.services.youtube.YouTubeRequestHelper.WEB_HEADER
 import project.pipepipe.extractor.services.youtube.YouTubeRequestHelper.getChannelInfoBody
@@ -18,7 +19,6 @@ import project.pipepipe.shared.job.TaskResult
 import project.pipepipe.shared.job.isDefaultTask
 import project.pipepipe.shared.state.PlainState
 import project.pipepipe.shared.state.State
-import project.pipepipe.shared.utils.json.asJson
 import project.pipepipe.shared.utils.json.requireArray
 import project.pipepipe.shared.utils.json.requireString
 import java.net.URLEncoder
