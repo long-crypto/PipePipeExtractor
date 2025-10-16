@@ -9,7 +9,6 @@ import org.cache2k.Cache
 import org.cache2k.Cache2kBuilder
 import project.pipepipe.extractor.ExtractorContext
 import project.pipepipe.shared.downloader.Downloader
-import project.pipepipe.extractor.exceptions.ParsingException
 import project.pipepipe.shared.utils.json.requireArray
 import project.pipepipe.shared.utils.json.requireDouble
 import project.pipepipe.shared.utils.json.requireLong
@@ -341,7 +340,7 @@ object Utils {
         val actualVarString = when {
             url.contains(varStringVariant) -> varStringVariant
             url.contains(varString) -> varString
-            else -> throw ParsingException("Could not find $varName in url: $url")
+            else -> error("Could not find $varName in url: $url")
         }
 
         val offset = url.split(Pattern.quote(actualVarString))[1].split(Pattern.quote("&"))[0]
@@ -448,7 +447,7 @@ object Utils {
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
-                throw ParsingException("Failed parse response body: $responseBody")
+                error("Failed parse response body: $responseBody")
             }
         }
 
@@ -462,7 +461,7 @@ object Utils {
 
         isClientAPIMode = !isClientAPIMode // flip API mode
         DeviceForger.regenerateRandomDevice() // try to regenerate a new one
-        throw ParsingException(msg)
+        error(msg)
     }
 
     fun encodeToBase64SubString(raw: String): String {

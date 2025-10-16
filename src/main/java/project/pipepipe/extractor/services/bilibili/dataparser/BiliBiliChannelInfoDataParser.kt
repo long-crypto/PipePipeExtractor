@@ -7,18 +7,6 @@ import project.pipepipe.shared.utils.json.requireString
 import project.pipepipe.shared.infoitem.ChannelInfo
 
 object BiliBiliChannelInfoDataParser {
-    fun parseFromSearchResultChannelJson(data: JsonNode): ChannelInfo {
-        return ChannelInfo(
-            url = BiliBiliLinks.CHANNEL_BASE_URL + data.requireLong("mid"),
-            name = data.requireString("uname"),
-            serviceId = "BILIBILI",
-            thumbnailUrl = "https:" + data.requireString("upic"),
-            description = data.requireString("usign"),
-            subscriberCount = data.requireLong("fans"),
-            isVerified = false
-        )
-    }
-
     fun parseFromChannelSearchJson(data: JsonNode): ChannelInfo {
         return ChannelInfo(
             url = BiliBiliLinks.CHANNEL_BASE_URL + data.requireLong("mid"),
@@ -27,7 +15,6 @@ object BiliBiliChannelInfoDataParser {
             thumbnailUrl = "https:" + data.requireString("upic"),
             description = data.requireString("usign"),
             subscriberCount = data.requireLong("fans"),
-            isVerified = false
         )
     }
 }
