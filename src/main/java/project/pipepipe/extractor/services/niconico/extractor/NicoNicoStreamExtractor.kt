@@ -13,6 +13,8 @@ import project.pipepipe.extractor.services.niconico.NicoNicoUrlParser.parseStrea
 import project.pipepipe.shared.state.State
 import project.pipepipe.shared.state.StreamExtractState
 import project.pipepipe.extractor.ExtractorContext.asJson
+import project.pipepipe.extractor.services.niconico.NicoNicoLinks.RELATED_VIDEO_URL
+import project.pipepipe.extractor.services.niconico.NicoNicoLinks.USER_URL
 import project.pipepipe.shared.utils.json.requireArray
 import project.pipepipe.shared.utils.json.requireBoolean
 import project.pipepipe.shared.utils.json.requireLong
@@ -23,6 +25,7 @@ import project.pipepipe.shared.infoitem.helper.stream.Description
 import project.pipepipe.shared.job.*
 import project.pipepipe.shared.state.PlainState
 import java.time.ZonedDateTime
+import project.pipepipe.shared.job.ErrorDetail
 
 
 class NicoNicoStreamExtractor(
@@ -38,15 +41,128 @@ class NicoNicoStreamExtractor(
         if (currentState == null) {
             return JobStepResult.ContinueWith(listOf(
                 ClientTask(payload = Payload(RequestMethod.GET, WATCH_URL + id, GOOGLE_HEADER)),
-            ), state = PlainState(0))
-        } else if (currentState.step == 0) {
+            ), state = PlainState(1))
+        } else if (currentState.step == 1) {
             val response = clientResults!!.first { it.taskId.isDefaultTask()}.result!!
             val page = Jsoup.parse(response)
-            val watchData = objectMapper.readTree(page.select("meta[name=\"server-response\"]").first()!!.attr("content"))
+
+            // Check for errors in HTML page (when meta tag is missing)
+            val metaElement = page.select("meta[name=\"server-response\"]").first()
+            if (metaElement == null) {
+                // Need login or other errors
+                val responseBody = response
+
+                when {
+                    responseBody.contains("チャンネル会員専用動画") -> {
+                        return JobStepResult.FailWith(
+                            ErrorDetail(
+                                code = "PAID_002",
+                                stackTrace = IllegalStateException("Channel member limited videos").stackTraceToString()
+                            )
+                        )
+                    }
+                    responseBody.contains("地域と同じ地域からのみ視聴") -> {
+                        return JobStepResult.FailWith(
+                            ErrorDetail(
+                                code = "GEO_001",
+                                stackTrace = IllegalStateException("Sorry, this video can only be viewed in the same region where it was uploaded.").stackTraceToString()
+                            )
+                        )
+                    }
+                    responseBody.contains("この動画を視聴するにはログインが必要です。") -> {
+                        return JobStepResult.FailWith(
+                            ErrorDetail(
+                                code = "LOGIN_002",
+                                stackTrace = IllegalStateException("This video requires login to view.").stackTraceToString()
+                            )
+                        )
+                    }
+                    else -> {
+                        val errorMessage = page.select("p.fail-message").text()
+                        return JobStepResult.FailWith(
+                            ErrorDetail(
+                                code = "BLOCK_001",
+                                stackTrace = IllegalStateException(errorMessage.ifEmpty { "Content not available" }).stackTraceToString()
+                            )
+                        )
+                    }
+                }
+            }
+
+            val watchData = try {
+                objectMapper.readTree(metaElement.attr("content"))
+            } catch (e: Exception) {
+                return JobStepResult.FailWith(
+                    ErrorDetail(
+                        code = "PARSE_001",
+                        stackTrace = IllegalStateException("Failed to parse content", e).stackTraceToString()
+                    )
+                )
+            }
+
+            // Check for errorCode in JSON response (like old code line 101-116)
+            val responseData = watchData.get("data")?.get("response")
+            if (responseData != null) {
+                val errorCode = responseData.get("errorCode")?.asText()
+                val reasonCode = responseData.get("reasonCode")?.asText()
+                val okReason = responseData.get("okReason")?.asText()
+
+                // Check for FORBIDDEN errors
+                if (errorCode == "FORBIDDEN") {
+                    when (reasonCode) {
+                        "DOMESTIC_VIDEO" -> {
+                            return JobStepResult.FailWith(
+                                ErrorDetail(
+                                    code = "GEO_001",
+                                    stackTrace = IllegalStateException("This video is only available in Japan").stackTraceToString()
+                                )
+                            )
+                        }
+                        "HARMFUL_VIDEO" -> {
+                            return JobStepResult.FailWith(
+                                ErrorDetail(
+                                    code = "LOGIN_002",
+                                    stackTrace = IllegalStateException("This content need an account to view").stackTraceToString()
+                                )
+                            )
+                        }
+                        else -> {
+                            return JobStepResult.FailWith(
+                                ErrorDetail(
+                                    code = "BLOCK_001",
+                                    stackTrace = IllegalStateException(reasonCode ?: "Content not available").stackTraceToString()
+                                )
+                            )
+                        }
+                    }
+                }
+
+                // Check for paid content (PAYMENT_PREVIEW_SUPPORTED)
+                if (okReason == "PAYMENT_PREVIEW_SUPPORTED") {
+                    val payment = responseData.get("payment")?.get("video")
+                    if (payment != null) {
+                        if (payment.get("isPremium")?.asBoolean() == true) {
+                            return JobStepResult.FailWith(
+                                ErrorDetail(
+                                    code = "PAID_001",
+                                    stackTrace = IllegalStateException("This content is limited to premium users").stackTraceToString()
+                                )
+                            )
+                        } else if (payment.get("billingType")?.asText() == "member_only") {
+                            return JobStepResult.FailWith(
+                                ErrorDetail(
+                                    code = "PAID_002",
+                                    stackTrace = IllegalStateException("This content is limited to channel members").stackTraceToString()
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+
             val streamInfo = StreamInfo(
                 url = WATCH_URL + id,
                 serviceId = "NICONICO",
-                id = null,
                 name = watchData.requireString("/data/response/video/title"),
                 streamType = StreamType.VIDEO_STREAM,
                 uploaderName =
@@ -56,11 +172,9 @@ class NicoNicoStreamExtractor(
                     else watchData.requireString(
                         "/data/response/owner/nickname"
                     ),
-                uploadDate = safeGet { ZonedDateTime.parse(watchData.requireString("/data/response/video/registeredAt")).toInstant().toEpochMilli() },
-                duration = watchData.requireLong("/data/response/video/duration"),
                 uploaderUrl = safeGet {
                     if (isChannel(watchData)) CHANNEL_URL + watchData.requireString("/data/response/channel/id")
-                    else watchData.requireString(
+                    else USER_URL + watchData.requireString(
                         "/data/response/owner/id"
                     )
                 },
@@ -70,14 +184,15 @@ class NicoNicoStreamExtractor(
                         "/data/response/owner/iconUrl"
                     )
                 },
+                uploadDate = safeGet { ZonedDateTime.parse(watchData.requireString("/data/response/video/registeredAt")).toInstant().toEpochMilli() },
+                duration = watchData.requireLong("/data/response/video/duration"),
                 viewCount = safeGet { watchData.requireLong("/data/response/video/count/view") },
                 likeCount = safeGet { watchData.requireLong("/data/response/video/count/like") },
                 thumbnailUrl = safeGet { watchData.requireString("/data/response/video/thumbnail/ogp") },
                 description = safeGet { Description(watchData.requireString("/data/response/video/description"),
                     Description.HTML) },
                 tags = safeGet { watchData.requireArray("/data/response/tag/items").map { it.requireString("name") } },
-                commentInfo = null,
-                relatedItemInfo = null
+                relatedItemUrl = RELATED_VIDEO_URL + id
             )
             val audioId = watchData.requireArray("/data/response/media/domand/audios")
                 .first { it.requireBoolean("isAvailable") }.requireString("id")

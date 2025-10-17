@@ -1,7 +1,6 @@
 package project.pipepipe.extractor.services.youtube.dataparser
 
 import com.fasterxml.jackson.databind.JsonNode
-import project.pipepipe.extractor.services.youtube.YouTubeLinks.BASE_URL
 import project.pipepipe.extractor.services.youtube.YouTubeLinks.CHANNEL_URL
 import project.pipepipe.extractor.services.youtube.YouTubeLinks.STREAM_URL
 import project.pipepipe.extractor.utils.TimeAgoParser
@@ -12,7 +11,10 @@ import project.pipepipe.shared.infoitem.StreamInfo
 import project.pipepipe.shared.infoitem.StreamType
 
 object YouTubeStreamInfoDataParser {
-    fun parseVideoRenderer(data: JsonNode, overrideChannelName: String? = null, overrideChannelId: String? = null): StreamInfo {
+    fun parseFromVideoRenderer(data: JsonNode, overrideChannelName: String? = null, overrideChannelId: String? = null): StreamInfo {
+        if (!data.has("videoRenderer")) {
+            return parseFromLockupViewModel(data, overrideChannelName,  overrideChannelName)
+        }
         val isLive = when {
             runCatching { data.requireString("/videoRenderer/badges/0/metadataBadgeRenderer/style") }.getOrNull() == "BADGE_STYLE_TYPE_LIVE_NOW" -> true
             runCatching{ data.requireString("/videoRenderer/badges/0/metadataBadgeRenderer/label") }.getOrNull()?.startsWith("LIVE") == true -> true
@@ -42,7 +44,7 @@ object YouTubeStreamInfoDataParser {
                 true -> {
                     streamType = StreamType.LIVE_STREAM
                     viewCount = data.requireString("/videoRenderer/viewCountText/runs/0/text").extractDigitsAsLong()
-                    shortFormContent = false //todo
+                    isShort = false //todo
                 }
             }
         }
@@ -81,30 +83,44 @@ object YouTubeStreamInfoDataParser {
         )
     }
 
-    fun parseFromLockupViewModel(data: JsonNode): StreamInfo {
+    fun parseFromLockupViewModel(data: JsonNode, overrideChannelName: String? = null, overrideChannelId: String? = null): StreamInfo {
+        val useOverride = overrideChannelName != null && overrideChannelId != null
+        val metadataRowIndex = if (useOverride) 0 else 1
+
         val isLive = runCatching {
-            data.requireString("/lockupViewModel/metadata/lockupMetadataViewModel/metadata/contentMetadataViewModel/metadataRows/1/metadataParts/0/text/content").contains("watching")
+            data.requireString("/lockupViewModel/metadata/lockupMetadataViewModel/metadata/contentMetadataViewModel/metadataRows/$metadataRowIndex/metadataParts/0/text/content").contains("watching")
         }.getOrDefault(false)
 
         return StreamInfo(
             url = STREAM_URL + data.requireString("/lockupViewModel/contentId"),
             serviceId = "YOUTUBE",
             name = data.requireString("/lockupViewModel/metadata/lockupMetadataViewModel/title/content"),
-            uploaderName = data.requireString("/lockupViewModel/metadata/lockupMetadataViewModel/metadata/contentMetadataViewModel/metadataRows/0/metadataParts/0/text/content"),
-            uploaderUrl = runCatching{ CHANNEL_URL + data.requireString("/lockupViewModel/metadata/lockupMetadataViewModel/image/decoratedAvatarViewModel/rendererContext/commandContext/onTap/innertubeCommand/browseEndpoint/browseId") }.getOrNull(),
-            uploaderAvatarUrl = data.requireArray("/lockupViewModel/metadata/lockupMetadataViewModel/image/decoratedAvatarViewModel/avatar/avatarViewModel/image/sources").last().requireString("url"),
+            uploaderName = overrideChannelName ?: data.requireString("/lockupViewModel/metadata/lockupMetadataViewModel/metadata/contentMetadataViewModel/metadataRows/0/metadataParts/0/text/content"),
+            uploaderUrl = if (useOverride) {
+                CHANNEL_URL + overrideChannelId
+            } else {
+                runCatching { CHANNEL_URL + data.requireString("/lockupViewModel/metadata/lockupMetadataViewModel/image/decoratedAvatarViewModel/rendererContext/commandContext/onTap/innertubeCommand/browseEndpoint/browseId") }.getOrNull()
+            },
+            uploaderAvatarUrl = if (useOverride) {
+                null
+            } else {
+                data.requireArray("/lockupViewModel/metadata/lockupMetadataViewModel/image/decoratedAvatarViewModel/avatar/avatarViewModel/image/sources").last().requireString("url")
+            },
             thumbnailUrl = data.requireArray("/lockupViewModel/contentImage/thumbnailViewModel/image/sources").last().requireString("url"),
-            viewCount = runCatching { data.requireString("/lockupViewModel/metadata/lockupMetadataViewModel/metadata/contentMetadataViewModel/metadataRows/1/metadataParts/0/text/content").extractDigitsAsLong() }.getOrNull()
+            viewCount = runCatching {
+                data.requireString("/lockupViewModel/metadata/lockupMetadataViewModel/metadata/contentMetadataViewModel/metadataRows/$metadataRowIndex/metadataParts/0/text/content").extractDigitsAsLong()
+            }.getOrNull()
         ).apply {
             if (isLive) {
                 streamType = StreamType.LIVE_STREAM
             } else {
                 streamType = StreamType.VIDEO_STREAM
                 duration = parseDurationString(data.requireString("/lockupViewModel/contentImage/thumbnailViewModel/overlays/0/thumbnailOverlayBadgeViewModel/thumbnailBadges/0/thumbnailBadgeViewModel/text"))
-                uploadDate = TimeAgoParser.parseToTimestamp(data.requireString("/lockupViewModel/metadata/lockupMetadataViewModel/metadata/contentMetadataViewModel/metadataRows/1/metadataParts/1/text/content"))
+                uploadDate = TimeAgoParser.parseToTimestamp(data.requireString("/lockupViewModel/metadata/lockupMetadataViewModel/metadata/contentMetadataViewModel/metadataRows/$metadataRowIndex/metadataParts/1/text/content"))
             }
         }
     }
+
 
 
     private fun parseDurationString(input: String): Long {

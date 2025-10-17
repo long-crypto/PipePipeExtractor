@@ -22,6 +22,7 @@ import project.pipepipe.extractor.utils.RequestHelper.replaceQueryValue
 import project.pipepipe.shared.state.PlainState
 import project.pipepipe.shared.state.State
 import project.pipepipe.extractor.ExtractorContext.asJson
+import project.pipepipe.extractor.Router.setType
 import project.pipepipe.shared.utils.json.requireArray
 import project.pipepipe.shared.utils.json.requireString
 
@@ -45,11 +46,10 @@ class YouTubePlaylistExtractor(
                             getPlaylistInfoBody(getQueryValue(url, "list")!!)
                         )
                     )
-                ), PlainState(0)
+                ), PlainState(1)
             )
         } else {
             val result = clientResults!!.first { it.taskId.isDefaultTask() }.result!!.asJson()
-            val url = result.requireString("/microformat/microformatDataRenderer/urlCanonical")
             var nextPageUrl: String? = null
             result.requireArray("/contents/twoColumnBrowseResultsRenderer/tabs/0/tabRenderer/content/sectionListRenderer/contents/0/itemSectionRenderer/contents/0/playlistVideoListRenderer/contents").forEach {
                 if (it.has("playlistVideoRenderer")) {
@@ -62,7 +62,7 @@ class YouTubePlaylistExtractor(
             return JobStepResult.CompleteWith(ExtractResult(
                 info = PlaylistInfo(
                     serviceId = "YOUTUBE",
-                    url = url,
+                    url =  result.requireString("/microformat/microformatDataRenderer/urlCanonical").setType("https"),
                     name = result.requireString("/microformat/microformatDataRenderer/title"),
                     thumbnailUrl = result.requireString("/microformat/microformatDataRenderer/thumbnail/thumbnails/0/url"),
                     streamCount = result.requireString("/sidebar/playlistSidebarRenderer/items/0/playlistSidebarPrimaryInfoRenderer/stats/0/runs/0/text").extractDigitsAsLong(),
@@ -91,7 +91,7 @@ class YouTubePlaylistExtractor(
                             getContinuationBody(getQueryValue(url, "continuation")!!)
                         )
                     )
-                ), PlainState(0)
+                ), PlainState(1)
             )
         } else {
             val result = clientResults!!.first { it.taskId.isDefaultTask() }.result!!.asJson()
@@ -100,7 +100,7 @@ class YouTubePlaylistExtractor(
                 if (it.has("playlistVideoRenderer")) {
                     commit { parseFromPlaylistVideoRenderer(it) }
                 } else { //continuation
-                    nextUrl = "${replaceQueryValue(url, "continuation",it.requireString("99/continuationItemRenderer/continuationEndpoint/continuationCommand/token"))}"
+                    nextUrl = "${replaceQueryValue(url, "continuation",it.requireString("/continuationItemRenderer/continuationEndpoint/continuationCommand/token"))}"
                 }
 
             }

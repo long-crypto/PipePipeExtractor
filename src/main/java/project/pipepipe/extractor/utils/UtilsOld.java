@@ -1,6 +1,5 @@
 package project.pipepipe.extractor.utils;
 
-import project.pipepipe.extractor.exceptions.ParsingException;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -88,12 +87,11 @@ public final class UtilsOld {
      * @param numberWord string to be converted to a long
      * @return a long
      */
-    public static long mixedNumberWordToLong(final String numberWord)
-            throws NumberFormatException, ParsingException {
+    public static long mixedNumberWordToLong(final String numberWord) {
         String multiplier = "";
         try {
             multiplier = Parser.matchGroup("[\\d]+([\\.,][\\d]+)?([KMBkmb])+", numberWord, 2);
-        } catch (final ParsingException ignored) {
+        } catch (Exception ignored) {
         }
         final double count = Double.parseDouble(
                 Parser.matchGroup1("([\\d]+([\\.,][\\d]+)?)", numberWord).replace(",", "."));
@@ -115,15 +113,15 @@ public final class UtilsOld {
      * @param pattern the pattern that will be used to check the url
      * @param url     the url to be tested
      */
-    public static void checkUrl(final String pattern, final String url) throws ParsingException {
-        if (isNullOrEmpty(url)) {
-            throw new IllegalArgumentException("Url can't be null or empty");
-        }
-
-        if (!Parser.isMatch(pattern, url.toLowerCase())) {
-            throw new ParsingException("Url don't match the pattern");
-        }
-    }
+//    public static void checkUrl(final String pattern, final String url) throws ParsingException {
+//        if (isNullOrEmpty(url)) {
+//            throw new IllegalArgumentException("Url can't be null or empty");
+//        }
+//
+//        if (!Parser.isMatch(pattern, url.toLowerCase())) {
+//            throw new ParsingException("Url don't match the pattern");
+//        }
+//    }
 
     public static String replaceHttpWithHttps(final String url) {
         if (url == null) {
@@ -238,43 +236,6 @@ public final class UtilsOld {
         return result;
     }
 
-    @Nonnull
-    public static String getBaseUrl(final String url) throws ParsingException {
-        try {
-            final URL uri = stringToURL(url);
-            return uri.getProtocol() + "://" + uri.getAuthority();
-        } catch (final MalformedURLException e) {
-            final String message = e.getMessage();
-            if (message.startsWith("unknown protocol: ")) {
-                // Return just the protocol (e.g. vnd.youtube)
-                return message.substring("unknown protocol: ".length());
-            }
-
-            throw new ParsingException("Malformed url: " + url, e);
-        }
-    }
-
-    /**
-     * If the provided url is a Google search redirect, then the actual url is extracted from the
-     * {@code url=} query value and returned, otherwise the original url is returned.
-     *
-     * @param url the url which can possibly be a Google search redirect
-     * @return an url with no Google search redirects
-     */
-    public static String followGoogleRedirectIfNeeded(final String url) {
-        // If the url is a redirect from a Google search, extract the actual URL
-        try {
-            final URL decoded = UtilsOld.stringToURL(url);
-            if (decoded.getHost().contains("google") && decoded.getPath().equals("/url")) {
-                return URLDecoder.decode(Parser.matchGroup1("&url=([^&]+)(?:&|$)", url), UTF_8);
-            }
-        } catch (final Exception ignored) {
-        }
-
-        // URL is not a Google search redirect
-        return url;
-    }
-
     public static boolean isNullOrEmpty(final String str) {
         return str == null || str.isEmpty();
     }
@@ -364,92 +325,6 @@ public final class UtilsOld {
         return join(delimiter, list);
     }
 
-    /**
-     * Find the result of an array of string regular expressions inside an input on the first
-     * group ({@code 0}).
-     *
-     * @param input   the input on which using the regular expressions
-     * @param regexes the string array of regular expressions
-     * @return the result
-     * @throws Parser.RegexException if none of the patterns match the input
-     */
-    @Nonnull
-    public static String getStringResultFromRegexArray(@Nonnull final String input,
-                                                       @Nonnull final String[] regexes)
-            throws Parser.RegexException {
-        return getStringResultFromRegexArray(input, regexes, 0);
-    }
-
-    /**
-     * Find the result of an array of {@link Pattern}s inside an input on the first group
-     * ({@code 0}).
-     *
-     * @param input   the input on which using the regular expressions
-     * @param regexes the {@link Pattern} array
-     * @return the result
-     * @throws Parser.RegexException if none of the patterns match the input
-     */
-    @Nonnull
-    public static String getStringResultFromRegexArray(@Nonnull final String input,
-                                                       @Nonnull final Pattern[] regexes)
-            throws Parser.RegexException {
-        return getStringResultFromRegexArray(input, regexes, 0);
-    }
-
-    /**
-     * Find the result of an array of string regular expressions inside an input on a specific
-     * group.
-     *
-     * @param input   the input on which using the regular expressions
-     * @param regexes the string array of regular expressions
-     * @param group   the group to match
-     * @return the result
-     * @throws Parser.RegexException if none of the patterns match the input, or at least in the
-     * specified group
-     */
-    @Nonnull
-    public static String getStringResultFromRegexArray(@Nonnull final String input,
-                                                       @Nonnull final String[] regexes,
-                                                       final int group)
-            throws Parser.RegexException {
-        return getStringResultFromRegexArray(input,
-                Arrays.stream(regexes)
-                        .filter(Objects::nonNull)
-                        .map(Pattern::compile)
-                        .toArray(Pattern[]::new),
-                group);
-    }
-
-    /**
-     * Find the result of an array of {@link Pattern}s inside an input on a specific
-     * group.
-     *
-     * @param input   the input on which using the regular expressions
-     * @param regexes the {@link Pattern} array
-     * @param group   the group to match
-     * @return the result
-     * @throws Parser.RegexException if none of the patterns match the input, or at least in the
-     * specified group
-     */
-    @Nonnull
-    public static String getStringResultFromRegexArray(@Nonnull final String input,
-                                                       @Nonnull final Pattern[] regexes,
-                                                       final int group)
-            throws Parser.RegexException {
-        for (final Pattern regex : regexes) {
-            try {
-                final String result = Parser.matchGroup(regex, input, group);
-                if (result != null) {
-                    return result;
-                }
-
-                // Continue if the result is null
-            } catch (final Parser.RegexException ignored) {
-            }
-        }
-
-        throw new Parser.RegexException("No regex matched the input on group " + group);
-    }
     public static long parseLong(final String value) {
         try {
             return Long.parseLong(value);

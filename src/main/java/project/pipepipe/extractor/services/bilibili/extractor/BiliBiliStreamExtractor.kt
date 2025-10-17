@@ -1,12 +1,8 @@
-package project.pipepipe.extractor.services.bilibili.metainfo
+package project.pipepipe.extractor.services.bilibili.extractor
 
 import com.fasterxml.jackson.databind.JsonNode
 import project.pipepipe.extractor.Extractor
-import project.pipepipe.extractor.ExtractorContext
 import project.pipepipe.extractor.Router.setType
-import project.pipepipe.extractor.exceptions.ContentNotAvailableException
-import project.pipepipe.extractor.exceptions.GeographicRestrictionException
-import project.pipepipe.extractor.exceptions.PaidContentException
 import project.pipepipe.extractor.services.bilibili.BiliBiliLinks
 import project.pipepipe.extractor.services.bilibili.BiliBiliLinks.DANMAKU_RAW_URL
 import project.pipepipe.extractor.services.bilibili.BiliBiliLinks.VIDEO_BASE_URL
@@ -17,8 +13,6 @@ import project.pipepipe.shared.state.State
 import project.pipepipe.shared.state.StreamExtractState
 import project.pipepipe.extractor.utils.UtilsOld
 import project.pipepipe.extractor.utils.createMultiStreamDashManifest
-import project.pipepipe.shared.infoitem.CommentInfo
-import project.pipepipe.shared.infoitem.RelatedItemInfo
 import project.pipepipe.shared.infoitem.StaffInfo
 import project.pipepipe.shared.infoitem.StreamInfo
 import project.pipepipe.shared.infoitem.helper.stream.AudioStream
@@ -31,34 +25,13 @@ import project.pipepipe.shared.job.Payload
 import project.pipepipe.shared.job.RequestMethod
 import project.pipepipe.shared.job.TaskResult
 import project.pipepipe.extractor.ExtractorContext.asJson
+import project.pipepipe.shared.job.ErrorDetail
 import project.pipepipe.shared.utils.json.requireArray
 import project.pipepipe.shared.utils.json.requireInt
 import project.pipepipe.shared.utils.json.requireLong
 import project.pipepipe.shared.utils.json.requireObject
 import project.pipepipe.shared.utils.json.requireString
 import kotlin.collections.map
-
-enum class ContentType {
-    FREE,
-    PREMIUM
-}
-
-enum class PaymentStatus {
-    FREE,
-    PAID
-}
-
-enum class LiveStatus(val code: Int) {
-    NOT_STARTED(0),
-    LIVE(1),
-    ROUND_PLAY(2)
-}
-
-enum class PremiumContentType {
-    SEASON,
-    EPISODE
-}
-
 
 class BiliBiliStreamExtractor(
     url: String,
@@ -72,30 +45,27 @@ class BiliBiliStreamExtractor(
         clientResults: List<TaskResult>?,
         cookie: String?
     ): JobStepResult {
-        val headers = BilibiliService.getHeaders(url, cookie!!)
+        val headers = BilibiliService.getHeadersWithCookie(url, cookie!!)
         bvid = Utils.getPureBV(id)
         val apiUrl = Utils.getUrl(url, id)
 
-        val loggedHeaders = BilibiliService.getLoggedHeadersOrNull(url, "ai_subtitle")
-        val requestHeaders = loggedHeaders ?: headers
-
         if (currentState == null) {
             return JobStepResult.ContinueWith(listOf(
-                ClientTask(taskId = "info", payload = Payload(RequestMethod.GET, apiUrl, requestHeaders)),
+                ClientTask(taskId = "info", payload = Payload(RequestMethod.GET, apiUrl, headers)),
                 ClientTask(taskId = "tags", payload = Payload(
                     RequestMethod.GET,
                     BiliBiliLinks.FETCH_TAGS_URL + Utils.getPureBV(id),
                     headers = headers
                 )),
             ), state = StreamExtractState(
-                0, StreamInfo(
+                1, StreamInfo(
                     url,
                     "BILIBILI"
                 )
             ))
-        } else if (currentState.step == 0) {
-            return step_1(sessionId, currentState as StreamExtractState, clientResults!!, cookie)
         } else if (currentState.step == 1) {
+            return step_1(sessionId, currentState as StreamExtractState, clientResults!!, cookie)
+        } else if (currentState.step == 2) {
             return step_final(sessionId, currentState as StreamExtractState, clientResults!!)
         } else throw IllegalArgumentException()
     }
@@ -115,7 +85,7 @@ class BiliBiliStreamExtractor(
         val pageNum = pageNumString?.toIntOrNull() ?: 1
 
         val streamInfo = StreamInfo("$VIDEO_BASE_URL$bvid?p=$pageNum", "BILIBILI")
-        val headers = BilibiliService.getHeaders(url, cookie)
+        val headers = BilibiliService.getHeadersWithCookie(url, cookie)
 
         val page = watchData.requireArray("pages")[pageNum - 1]
         val cid = page.requireLong("cid")
@@ -142,7 +112,7 @@ class BiliBiliStreamExtractor(
 
         return JobStepResult.ContinueWith(listOf(ClientTask("stream_data", Payload(
             RequestMethod.GET, Utils.getWbiResult(baseUrl, streamParams, cookie), headers = streamRequestHeaders
-        ))), state = StreamExtractState(1, streamInfo))
+        ))), state = StreamExtractState(2, streamInfo))
     }
 
     fun step_final(sessionId: String, currentState: StreamExtractState, clientResults: List<TaskResult>): JobStepResult {
@@ -153,16 +123,30 @@ class BiliBiliStreamExtractor(
             -10403 -> {
                 val message = playData.requireString("message")
                 if (message.contains("地区")) {
-                    throw GeographicRestrictionException(message)
+                    return JobStepResult.FailWith(
+                        ErrorDetail(
+                            code = "GEO_001",
+                            stackTrace = IllegalStateException(message).stackTraceToString()
+                        )
+                    )
                 }
-                throw ContentNotAvailableException(message)
             }
             else -> {
                 val message = playData.requireString("message")
                 if (message.contains("地区")) {
-                    throw GeographicRestrictionException(message)
+                    return JobStepResult.FailWith(
+                        ErrorDetail(
+                            code = "GEO_001",
+                            stackTrace = IllegalStateException(message).stackTraceToString()
+                        )
+                    )
                 }
-                throw ContentNotAvailableException(message)
+                return JobStepResult.FailWith(
+                    ErrorDetail(
+                        code = "PARSE_001",
+                        stackTrace = IllegalStateException(message).stackTraceToString()
+                    )
+                )
             }
         }
 
@@ -170,7 +154,12 @@ class BiliBiliStreamExtractor(
 
         if (streamData.size() == 0 ||
             (streamInfo.isPaid && (streamData.requireArray("video").size() + streamData.requireArray("audio").size() == 0))) {
-            throw PaidContentException("Paid content")
+            return JobStepResult.FailWith(
+                ErrorDetail(
+                    code = "PAID_001",
+                    stackTrace = IllegalStateException("Paid content").stackTraceToString()
+                )
+            )
         }
 
         streamInfo.isPortrait = streamData.requireArray("video")[0].let {
@@ -248,25 +237,19 @@ class BiliBiliStreamExtractor(
             emptyList()
         }
 
-        streamInfo.stats = stat.fieldNames().asSequence().associateWith {
-            stat.get(it).asText()
-        }
-
         streamInfo.tags = tagData.map { it.requireString("tag_name") }
 
 
-        streamInfo.startPosition = try {
+        streamInfo.initialTimestamp = try {
             streamInfo.url.split("#timestamp=")[1].toLong()
         } catch (e: Exception) {
             0
         }
         streamInfo.duration = page.requireLong("duration")
-        streamInfo.isPaid =
-            if (watch.requireObject("rights").requireInt("pay") == 1) true else false
-        streamInfo.commentInfo = safeGet { CommentInfo.builder().url(BiliBiliUrlParser.urlFromCommentsId(BiliBiliUrlParser.parseCommentsId(url)!!, cookie)).serviceId(
-            "BILIBILI").build() }
+        streamInfo.isPaid = watch.requireObject("rights").requireInt("pay") == 1
+        streamInfo.commentUrl = safeGet { BiliBiliUrlParser.urlFromCommentsId(BiliBiliUrlParser.parseCommentsId(url)!!, cookie) }
         streamInfo.danmakuUrl = "${DANMAKU_RAW_URL}?cid=${cid}"
-        streamInfo.relatedItemInfo = RelatedItemInfo(url.setType("related"))
+        streamInfo.relatedItemUrl = url.setType("related")
         streamInfo.sponsorblockUrl = "sponsorblock://bilibili.raw?id=$bvid"
         streamInfo.headers = hashMapOf("Referer" to "https://www.bilibili.com")
     }

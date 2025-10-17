@@ -3,6 +3,7 @@ package project.pipepipe.extractor.services.bilibili.dataparser
 import com.fasterxml.jackson.databind.JsonNode
 import org.apache.commons.lang3.StringEscapeUtils
 import project.pipepipe.extractor.services.bilibili.BiliBiliLinks
+import project.pipepipe.extractor.services.bilibili.BiliBiliLinks.CHANNEL_BASE_URL
 import project.pipepipe.extractor.services.bilibili.BiliBiliUrlParser
 import project.pipepipe.extractor.services.bilibili.Utils
 import project.pipepipe.extractor.utils.getDurationFromString
@@ -15,10 +16,9 @@ import project.pipepipe.shared.utils.json.requireObject
 import project.pipepipe.shared.utils.json.requireString
 
 object BiliBiliStreamInfoDataParser {
-    fun parseFromStreamInfoJson(item: JsonNode): () -> StreamInfo = {
-        StreamInfo(
+    fun parseFromStreamInfoJson(item: JsonNode): StreamInfo {
+        return StreamInfo(
             url = BiliBiliUrlParser.urlFromStreamID(BiliBiliUrlParser.parseStreamId(item.requireString("arcurl"))!!),
-            id = BiliBiliUrlParser.parseStreamId(item.requireString("arcurl"))!!,
             name = StringEscapeUtils.unescapeHtml4(
                 item.requireString("title")
                     .replace("<em class=\"keyword\">", "")
@@ -30,16 +30,16 @@ object BiliBiliStreamInfoDataParser {
             duration = getDurationFromString(item.requireString("duration")),
             viewCount = item.requireLong("play"),
             uploaderName = item.requireString("author"),
+            uploaderUrl = CHANNEL_BASE_URL + item.requireString("mid"),
             uploaderAvatarUrl = item.requireString("upic").replace("http:", "https:"),
             uploadDate = item.requireLong("pubdate") * 1000,
             headers = hashMapOf("Referer" to "https://www.bilibili.com")
         )
     }
 
-    fun parseFromTrendingInfoJson(item: JsonNode): () -> StreamInfo = {
-        StreamInfo(
+    fun parseFromTrendingInfoJson(item: JsonNode): StreamInfo {
+        return StreamInfo(
             url = BiliBiliLinks.VIDEO_BASE_URL + item.requireString("bvid") + "?p=1",
-            id = item.requireString("bvid"),
             name = item.requireString("title"),
             serviceId = "BILIBILI",
             thumbnailUrl = item.requireString("pic").replace("http:", "https:"),
@@ -47,23 +47,22 @@ object BiliBiliStreamInfoDataParser {
             duration = item.requireLong("duration"),
             viewCount = item.requireObject("stat").requireLong("view"),
             uploaderName = item.requireObject("owner").requireString("name"),
+            uploaderUrl = CHANNEL_BASE_URL + item.requireString("/owner/mid"),
             uploaderAvatarUrl = item.requireObject("owner").requireString("face"),
             uploadDate = item.requireLong("pubdate"),
             headers = hashMapOf("Referer" to "https://www.bilibili.com")
         )
     }
 
-    // 处理相关视频信息
-    fun parseFromRelatedInfoJson(item: JsonNode): () -> StreamInfo = {
+    fun parseFromRelatedInfoJson(item: JsonNode): StreamInfo {
         val actualId = try {
             item.requireString("bvid")
         } catch (e: Exception) {
             Utils.av2bv(item.requireLong("aid"))
         }
 
-        StreamInfo(
+        return StreamInfo(
             url = "${BiliBiliLinks.VIDEO_BASE_URL}$actualId",
-            id = actualId,
             name = item.requireString("title"),
             serviceId = "BILIBILI",
             thumbnailUrl = item.requireString("pic").replace("http", "https"),
@@ -71,21 +70,20 @@ object BiliBiliStreamInfoDataParser {
             duration = item.requireLong("duration"),
             viewCount = item.requireObject("stat").requireLong("view"),
             uploaderName = item.requireObject("owner").requireString("name"),
+            uploaderUrl = CHANNEL_BASE_URL + item.requireString("/owner/mid"),
             uploaderAvatarUrl = item.requireObject("owner").requireString("face").replace("http", "https"),
             uploadDate = item.requireLong("pubdate") * 1000,
             headers = hashMapOf("Referer" to "https://www.bilibili.com")
         )
     }
 
-    // 处理分P视频信息
     fun parseFromPartitionInfoJson(
         item: JsonNode,
         id: String,
         p: Int = 1,
-    ): () -> StreamInfo = {
-        StreamInfo(
+    ): StreamInfo {
+        return StreamInfo(
             url = "${BiliBiliLinks.VIDEO_BASE_URL}$id?p=$p",
-            id = id,
             name = item.requireString("part"),
             serviceId = "BILIBILI",
             streamType = StreamType.VIDEO_STREAM,
@@ -97,15 +95,14 @@ object BiliBiliStreamInfoDataParser {
     }
 
 
-    fun parseFromRecommendLiveInfoJson(data: JsonNode): () -> StreamInfo = {
+    fun parseFromRecommendLiveInfoJson(data: JsonNode): StreamInfo {
         val thumbnailUrl = try {
             data.requireString("user_cover")
         } catch (e: Exception) {
             data.requireString("system_cover")
         }
-        StreamInfo(
+        return StreamInfo(
             url = "https://${BiliBiliLinks.LIVE_BASE_URL}/${data.requireLong("roomid")}",
-            id = data.requireLong("roomid").toString(),
             name = data.requireString("title"),
             serviceId = "BILIBILI",
             thumbnailUrl = thumbnailUrl.replace("http:", "https:"),
@@ -116,24 +113,7 @@ object BiliBiliStreamInfoDataParser {
         )
     }
 
-    fun parseFromRecommendedVideoJson(item: JsonNode): () -> StreamInfo = {
-        StreamInfo(
-            url = item.requireString("uri") + "?p=1",
-            id = BiliBiliUrlParser.parseStreamId(item.requireString("uri"))!!,
-            name = item.requireString("title"),
-            serviceId = "BILIBILI",
-            thumbnailUrl = item.requireString("pic").replace("http:", "https:"),
-            streamType = StreamType.VIDEO_STREAM,
-            duration = item.requireLong("duration"),
-            viewCount = item.requireObject("stat").requireLong("view"),
-            uploaderName = item.requireObject("owner").requireString("name"),
-            uploaderAvatarUrl = item.requireObject("owner").requireString("face"),
-            uploadDate = item.requireLong("pubdate"),
-            headers = hashMapOf("Referer" to "https://www.bilibili.com")
-        )
-    }
-
-    fun parseFromPremiumContentJson(data: JsonNode): () -> StreamInfo = {
+    fun parseFromPremiumContentJson(data: JsonNode):  StreamInfo {
         val getPubtime = {
             try {
                 data.requireLong("pubtime") / 1000
@@ -148,9 +128,8 @@ object BiliBiliStreamInfoDataParser {
             data.requireString("share_url")
         }
 
-        StreamInfo(
+        return StreamInfo(
             url = url,
-            id = BiliBiliUrlParser.parseStreamId(url)!!,
             name = try {
                 data.requireString("share_copy")
             } catch (e: Exception) {
@@ -170,7 +149,7 @@ object BiliBiliStreamInfoDataParser {
         )
     }
 
-    fun parseFromLiveInfoJson(item: JsonNode, type: Int): () -> StreamInfo = {
+    fun parseFromLiveInfoJson(item: JsonNode, type: Int): StreamInfo {
         val name = if (item.requireInt("live_status") == 2) {
             item.requireString("uname") + "的投稿视频轮播"
         } else {
@@ -182,9 +161,8 @@ object BiliBiliStreamInfoDataParser {
         val roomIdField = if (type == 0) "roomid" else "room_id"
         val url = "https://live.bilibili.com/" + item.requireLong(roomIdField)
 
-        StreamInfo(
+        return StreamInfo(
             url = url,
-            id = item.requireLong(roomIdField).toString(),
             name = name,
             serviceId = "BILIBILI",
             thumbnailUrl = if (type == 1) {
@@ -196,23 +174,26 @@ object BiliBiliStreamInfoDataParser {
             duration = -1,
             viewCount = item.requireLong("online"),
             uploaderName = item.requireString("uname"),
+            uploaderUrl = CHANNEL_BASE_URL + item.requireString("uid"),
             uploaderAvatarUrl = if (type == 1) {
                 item.requireString("face")
             } else {
                 "https:" + item.requireString("uface")
             },
-                        uploadDate = null,
-            isRoundPlayStream = type == 1,
+            uploadDate = null,
             headers = hashMapOf("Referer" to "https://www.bilibili.com")
         )
     }
 
-    fun parseFromClientChannelInfoResponseJson(item: JsonNode, uploaderName: String, uploaderAvatarUrl: String?): () -> StreamInfo = {
+    fun parseFromClientChannelInfoResponseJson(
+        item: JsonNode,
+        uploaderName: String,
+        uploaderAvatarUrl: String?
+    ): () -> StreamInfo = {
         val bvid = item.requireString("bvid")
 
         StreamInfo(
             url = "${BiliBiliLinks.VIDEO_BASE_URL}$bvid?p=1",
-            id = bvid,
             name = item.requireString("title"),
             serviceId = "BILIBILI",
             thumbnailUrl = item.requireString("cover").replace("http:", "https:"),
@@ -235,10 +216,11 @@ object BiliBiliStreamInfoDataParser {
         )
     }
 
-    fun parseFromWebChannelInfoResponseJson(item: JsonNode): () -> StreamInfo = {
-        StreamInfo(
+    fun parseFromWebChannelInfoResponseJson(item: JsonNode,
+                                            overrideChannelName: String? = null,
+                                            overrideChannelId: String? = null): StreamInfo {
+        return StreamInfo(
             url = BiliBiliLinks.VIDEO_BASE_URL + item.requireString("bvid") + "?p=1",
-            id = item.requireString("bvid"),
             name = item.requireString("title"),
             serviceId = "BILIBILI",
             thumbnailUrl = item.requireString("pic").replace("http:", "https:"),
@@ -253,9 +235,10 @@ object BiliBiliStreamInfoDataParser {
             } catch (e: Exception) {
                 item.requireObject("stat").requireLong("view")
             },
-            uploaderName = item.requireString("author"),
-            uploadDate = if (item.requireInt("created") == 0) item.requireLong("pubdate") * 1000 else item.requireLong("created") * 1000,
-            isPaid = item.requireInt("elec_arc_type") == 1,
+            uploaderName = runCatching{ item.requireString("author") }.getOrDefault(overrideChannelName),
+            uploaderUrl = CHANNEL_BASE_URL + runCatching{ item.requireString("mid") }.getOrDefault(overrideChannelId),
+            uploadDate = if (!item.has("created")) item.requireLong("pubdate") * 1000 else item.requireLong("created") * 1000,
+            isPaid = runCatching{ item.requireInt("elec_arc_type") == 1 }.getOrElse { item.requireInt("ugc_pay") == 1 },
             headers = hashMapOf("Referer" to "https://www.bilibili.com")
         )
     }

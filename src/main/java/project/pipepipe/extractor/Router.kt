@@ -64,16 +64,29 @@ object Router {
         var sessionId = request.sessionId
         val currentState: State?
 
+        if (sessionId != null && request.results == null) {
+            return JobResponse(
+                sessionId = sessionId,
+                status = JobStatus.FAILED,
+                result = ExtractResult(
+                    fatalError = ErrorDetail(
+                        code = "NET_002",
+                        stackTrace = IllegalStateException("Empty client result received").stackTraceToString()
+                    )
+                )
+            )
+        }
+
         try {
-            if (sessionId == null) { // --- 场景1：新任务开始 ---
+            if (sessionId == null) { // new task
                 sessionId = UUID.randomUUID().toString()
                 currentState = request.state
-            } else { // --- 场景2：继续现有任务 ---
+            } else { // continue task
                 currentState = request.state ?: throw IllegalStateException("Session ID provided but no state in request")
             }
 
             // --- 统一的执行逻辑 ---
-            when (val stepResult = route(request, sessionId, currentState)) { // todo: catch
+            when (val stepResult = route(request, sessionId, currentState)) {
                 is JobStepResult.ContinueWith -> {
                     return JobResponse(
                         sessionId = sessionId,
@@ -92,12 +105,20 @@ object Router {
                         state = stepResult.state // return final state if any
                     )
                 }
+                is JobStepResult.FailWith -> {
+                    return JobResponse(
+                        sessionId = sessionId,
+                        status = JobStatus.FAILED,
+                        result = ExtractResult(fatalError = stepResult.fatalError)
+                    )
+                }
             }
         } catch (e: Exception) {
+            val errorCode = if (e.message?.contains("Too many failed commits") == true) "PARSE_002" else "UNKNOWN_001"
             return JobResponse(
                 sessionId = sessionId?:"",
                 status = JobStatus.FAILED,
-                result = ExtractResult(fatalError = ErrorDetail("TMP_123", e.stackTraceToString()))
+                result = ExtractResult(fatalError = ErrorDetail(errorCode, e.stackTraceToString()))
             )
         }
     }

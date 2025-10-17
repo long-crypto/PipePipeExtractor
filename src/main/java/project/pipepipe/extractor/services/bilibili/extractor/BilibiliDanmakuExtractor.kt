@@ -1,4 +1,4 @@
-package project.pipepipe.extractor.services.bilibili.metainfo
+package project.pipepipe.extractor.services.bilibili.extractor
 
 import org.jsoup.Jsoup
 import project.pipepipe.extractor.Extractor
@@ -39,7 +39,7 @@ class BilibiliDanmakuExtractor(
                         shouldReturnBase64Bytes = true
                     )
                 )
-            ), state = PlainState(0))
+            ), state = PlainState(1))
         } else {
             val data = Jsoup.parse(
                 String(
@@ -108,9 +108,6 @@ class BilibiliDanmakuExtractor(
 //        }
 //    }
 
-    private fun getId(): String {
-        return url!!.split("/").last().split("?")[0]
-    }
 
 //    private suspend fun initLiveStream() {
 //        try {

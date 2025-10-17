@@ -43,7 +43,7 @@ class YouTubeChannelPlaylistTabExtractor(
                             getChannelInfoBody(getQueryValue(url, "id")!!, ChannelTabType.PLAYLISTS)
                         )
                     )
-                ), PlainState(0)
+                ), PlainState(1)
             )
         } else {
             val result = clientResults!!.first { it.taskId.isDefaultTask() }.result!!.asJson()

@@ -68,15 +68,139 @@ class YouTubeStreamExtractor(
                     WEB_HEADER,
                     getVideoInfoBody(id)
                 )),
-            ), state = PlainState(0))
+            ), state = PlainState(1))
         } else {
             val info = clientResults!!.first { it.taskId == "info" }.result!!.asJson()
             val nextData = clientResults.first { it.taskId == "next_data" }.result!!.asJson()  // don't use this if possible as it's not stable
             val playData = clientResults.first { it.taskId == "play_data" }.result!!.asJson()
+
+            // Check playability status for errors
+            val playabilityStatus = playData.requireObject("/playerResponse/playabilityStatus")
+            val status = runCatching { playabilityStatus.requireString("status") }.getOrNull()
+
+            // If status is not OK, check for various error conditions
+            if (status != null && !status.equals("OK", ignoreCase = true)) {
+                val reason = runCatching { playabilityStatus.requireString("reason") }.getOrNull()
+
+                when {
+                    // LOGIN_REQUIRED status
+                    status.equals("LOGIN_REQUIRED", ignoreCase = true) -> {
+                        when {
+                            reason == null -> {
+                                val message = runCatching { playabilityStatus.requireString("/messages/0") }.getOrNull()
+                                if (message != null && message.contains("private", ignoreCase = true)) {
+                                    return JobStepResult.FailWith(
+                                        ErrorDetail(
+                                            code = "PRIV_001",
+                                            stackTrace = IllegalStateException("This video is private").stackTraceToString()
+                                        )
+                                    )
+                                }
+                            }
+                            reason.contains("age", ignoreCase = true) -> {
+                                return JobStepResult.FailWith(
+                                    ErrorDetail(
+                                        code = "LOGIN_002",
+                                        stackTrace = IllegalStateException("This age-restricted video cannot be watched anonymously").stackTraceToString()
+                                    )
+                                )
+                            }
+                        }
+                    }
+
+                    // UNPLAYABLE or ERROR status
+                    status.equals("UNPLAYABLE", ignoreCase = true) || status.equals("ERROR", ignoreCase = true) -> {
+                        when {
+                            reason != null && reason.contains("Music Premium", ignoreCase = true) -> {
+                                return JobStepResult.FailWith(
+                                    ErrorDetail(
+                                        code = "PAID_001",
+                                        stackTrace = IllegalStateException(reason).stackTraceToString()
+                                    )
+                                )
+                            }
+                            reason != null && reason.contains("payment", ignoreCase = true) -> {
+                                return JobStepResult.FailWith(
+                                    ErrorDetail(
+                                        code = "PAID_003",
+                                        stackTrace = IllegalStateException("This video is a paid video").stackTraceToString()
+                                    )
+                                )
+                            }
+                            reason != null && reason.contains("members-only", ignoreCase = true) -> {
+                                return JobStepResult.FailWith(
+                                    ErrorDetail(
+                                        code = "PAID_002",
+                                        stackTrace = IllegalStateException("This video is only available for members of the channel of this video").stackTraceToString()
+                                    )
+                                )
+                            }
+                            reason != null && reason.contains("unavailable", ignoreCase = true) -> {
+                                val detailedErrorMessage = runCatching {
+                                    playabilityStatus.requireString("/errorScreen/playerErrorMessageRenderer/subreason/simpleText")
+                                }.getOrNull()
+
+                                if (detailedErrorMessage != null && detailedErrorMessage.contains("country", ignoreCase = true)) {
+                                    return JobStepResult.FailWith(
+                                        ErrorDetail(
+                                            code = "GEO_001",
+                                            stackTrace = IllegalStateException("This video is not available in client's country.").stackTraceToString()
+                                        )
+                                    )
+                                } else {
+                                    return JobStepResult.FailWith(
+                                        ErrorDetail(
+                                            code = "BLOCK_001",
+                                            stackTrace = IllegalStateException(detailedErrorMessage ?: reason).stackTraceToString()
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Additional specific error checks
+                when {
+                    reason != null && reason.contains("Sign in to confirm", ignoreCase = true) -> {
+                        return JobStepResult.FailWith(
+                            ErrorDetail(
+                                code = "LOGIN_001",
+                                stackTrace = IllegalStateException(reason).stackTraceToString()
+                            )
+                        )
+                    }
+                    reason != null && reason.contains("This live event will begin in", ignoreCase = true) -> {
+                        return JobStepResult.FailWith(
+                            ErrorDetail(
+                                code = "TIME_001",
+                                stackTrace = IllegalStateException(reason).stackTraceToString()
+                            )
+                        )
+                    }
+                    reason != null && reason.contains("Premieres in", ignoreCase = true) -> {
+                        return JobStepResult.FailWith(
+                            ErrorDetail(
+                                code = "TIME_002",
+                                stackTrace = IllegalStateException(reason).stackTraceToString()
+                            )
+                        )
+                    }
+                    reason != null -> {
+                        return JobStepResult.FailWith(
+                            ErrorDetail(
+                                code = "BLOCK_001",
+                                stackTrace = IllegalStateException("Got error: \"$reason\"").stackTraceToString()
+                            )
+                        )
+                    }
+                }
+            }
+
             val savedRelatedData = nextData.requireArray("/contents/twoColumnWatchNextResults/secondaryResults/secondaryResults/results").mapNotNull {
                 runCatching { parseFromLockupViewModel(it) }.getOrNull()
             }
-            val isLive = playData.requireObject("/playerResponse/playabilityStatus").has("liveStreamability")
+            val isLive = playabilityStatus.has("liveStreamability")
             val streamInfo = StreamInfo(
                 url = STREAM_URL + id,
                 serviceId = "YOUTUBE",
@@ -93,10 +217,10 @@ class YouTubeStreamExtractor(
                 thumbnailUrl = safeGet { info.requireArray("/videoDetails/thumbnail/thumbnails").last().requireString("url") },
                 description = safeGet { Description(info.requireString("/microformat/playerMicroformatRenderer/description/simpleText"), PLAIN_TEXT) },
                 tags = safeGet{ info.requireArray("/videoDetails/keywords").map { it.asText() } },
-                commentInfo = safeGet { CommentInfo.builder().url("$COMMENT_RAW_URL?continuation=${nextData.requireArray("/contents/twoColumnWatchNextResults/results/results/contents").firstNotNullOfOrNull {
+                commentUrl = safeGet { "$COMMENT_RAW_URL?continuation=${nextData.requireArray("/contents/twoColumnWatchNextResults/results/results/contents").firstNotNullOfOrNull {
                    runCatching { it.requireString("/itemSectionRenderer/contents/0/continuationItemRenderer/continuationEndpoint/continuationCommand/token") }.getOrNull()
-                }}").serviceId("YOUTUBE").build() },
-                relatedItemInfo = RelatedItemInfo("cache://${sessionId}"),
+                }}" },
+                relatedItemUrl = "cache://${sessionId}",
                 headers = hashMapOf("User-Agent" to "com.google.android.youtube/19.28.35 (Linux; U; Android 15; GB) gzip")
             ).apply {
                 when (isLive) {

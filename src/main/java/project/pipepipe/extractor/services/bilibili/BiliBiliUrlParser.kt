@@ -56,7 +56,7 @@ object BiliBiliUrlParser {
                 val parseResult = processedUrl.split("aid=")[1].split("&")[0]
                 "${Utils.av2bv(parseResult.toLong())}?p=$p"
             }
-            processedUrl.contains(BiliBiliLinks.LIVE_BASE_URL) || processedUrl.contains("bangumi/play/") -> {
+            processedUrl.contains("bangumi/play/") -> {
                 urlParts[urlParts.size - 1].split("\\?".toRegex())[0]
             }
             else -> null

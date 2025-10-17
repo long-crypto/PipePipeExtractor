@@ -37,4 +37,7 @@ object BiliBiliLinks {
     const val FETCH_TICKET_URL = "https://api.bilibili.com/bapis/bilibili.api.ticket.v1.Ticket/GenWebTicket"
     const val SEARCH_BASE_URL = "https://api.bilibili.com/x/web-interface/search/type"
     const val DANMAKU_RAW_URL = "danmaku://bilibili.raw"
+    const val LIVE_ROOM_INFO_INIT_API_URL = "https://api.live.bilibili.com/room/v1/Room/room_init?id="
+    const val LIVE_ROOM_INFO_API_URL = "https://api.live.bilibili.com/room/v1/Room/get_status_info_by_uids?uids[]="
+    const val LIVE_ROOM_PLAY_BASE_API_URL = "https://api.live.bilibili.com/xlive/web-room/v2/index/getRoomPlayInfo"
 }

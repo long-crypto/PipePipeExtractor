@@ -51,7 +51,7 @@ class YouTubeCommentExtractor(url: String) : Extractor<Nothing, CommentInfo>(url
                             getContinuationBody(getQueryValue(url, "continuation")!!)
                         )
                     )
-                ), PlainState(0)
+                ), PlainState(1)
             )
         } else {
             val result = clientResults!!.first { it.taskId.isDefaultTask() }.result!!.asJson()

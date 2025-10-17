@@ -66,7 +66,13 @@ abstract class Extractor<META: Info, DATA: Info>(
             e.printStackTrace()
             println(url)
             if (failedCommitCount > FAILED_COMMIT_THRESHOLD)  {
-                error("Too many failed commits")
+                val recentErrors = _errors.takeLast(5).joinToString("\n\n") { err ->
+                    val trace = err.stackTrace.take(2).joinToString("\n  ") {
+                        "at ${it.className}.${it.methodName}(${it.fileName}:${it.lineNumber})"
+                    }
+                    "${err.message}\n  $trace"
+                }
+                error("Too many failed commits ($failedCommitCount). Recent errors:\n$recentErrors")
             }
         }
     }

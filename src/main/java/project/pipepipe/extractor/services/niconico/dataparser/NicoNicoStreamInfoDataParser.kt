@@ -3,6 +3,8 @@ package project.pipepipe.extractor.services.niconico.dataparser
 import com.fasterxml.jackson.databind.JsonNode
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
+import project.pipepipe.extractor.services.niconico.NicoNicoLinks.CHANNEL_URL
+import project.pipepipe.extractor.services.niconico.NicoNicoLinks.USER_URL
 import project.pipepipe.extractor.services.niconico.NicoNicoLinks.WATCH_URL
 import project.pipepipe.extractor.services.niconico.NicoNicoService
 import project.pipepipe.extractor.utils.getDurationFromString
@@ -17,24 +19,42 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 object NicoNicoStreamInfoDataParser {
-    fun parseFromSearchContentJson(item: JsonNode) = StreamInfo(
-        url = WATCH_URL + item.requireString("id"),
-        serviceId = "NICONICO",
-        name = item.requireString("title"),
-        uploaderName = item.requireString("/owner/name"),
-        uploadDate = java.time.OffsetDateTime.parse(item.requireString("registeredAt")).toInstant().toEpochMilli(),
-        duration = item.requireLong("duration"),
-        viewCount = item.requireLong("/count/view"),
-        thumbnailUrl = item.requireObject("thumbnail").let { thumbnail ->
-            listOf("nHdUrl", "url", "listingUrl")
-                .firstNotNullOfOrNull { key ->
-                    runCatching { thumbnail.requireString(key) }.getOrNull()
+    fun parseFromStreamCommonJson(itemRaw: JsonNode): StreamInfo {
+        val item = when {
+            itemRaw.has("content") -> itemRaw.requireObject("content")
+            itemRaw.has("video") -> itemRaw.requireObject("video")
+            else -> itemRaw
+        }
+        return StreamInfo(
+            url = WATCH_URL + item.requireString("id"),
+            serviceId = "NICONICO",
+            name = item.requireString("title"),
+            uploaderName = runCatching { item.requireString("/owner/name") }.getOrNull(),
+            uploaderUrl = runCatching {
+                val owner = item.requireObject("owner")
+                val ownerType = owner.requireString("ownerType")
+                val ownerId = owner.requireString("id")
+                if (ownerType == "user") {
+                    USER_URL + ownerId
+                } else {
+                    CHANNEL_URL + ownerId
                 }
-        },
-        isPaid = runCatching { item.requireBoolean("isPaymentRequired") }.getOrDefault(false),
-    )
+            }.getOrNull(),
+            uploaderAvatarUrl = runCatching { item.requireString("/owner/iconUrl") }.getOrNull(),
+            uploadDate = java.time.OffsetDateTime.parse(item.requireString("registeredAt")).toInstant().toEpochMilli(),
+            duration = item.requireLong("duration"),
+            viewCount = item.requireLong("/count/view"),
+            thumbnailUrl = item.requireObject("thumbnail").let { thumbnail ->
+                listOf("nHdUrl", "url", "listingUrl")
+                    .firstNotNullOfOrNull { key ->
+                        runCatching { thumbnail.requireString(key) }.getOrNull()
+                    }
+            },
+            isPaid = runCatching { item.requireBoolean("isPaymentRequired") }.getOrDefault(false),
+        )
+    }
 
-    fun parseFromRSSXml(item: Element, userName: String): StreamInfo {
+    fun parseFromRSSXml(item: Element, userName: String, userUrl: String): StreamInfo {
         val cdata = Jsoup.parse(item.selectFirst("description")?.text().orEmpty())
         val trendingRegex = Regex(NicoNicoService.TRENDING_RSS_STR)
         val rawTitle = item.selectFirst("title")?.text().orEmpty()
@@ -59,10 +79,11 @@ object NicoNicoStreamInfoDataParser {
             .text().trim().equals("true", ignoreCase = true)
 
         return StreamInfo(
-            url = url,
+            url = url.substringBefore("?"),
             serviceId = "NICONICO",
             name = title,
             uploaderName = userName,
+            uploaderUrl = userUrl,
             uploadDate = uploadDate,
             duration = duration,
             thumbnailUrl = thumbnailUrl,

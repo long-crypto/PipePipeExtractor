@@ -1,10 +1,9 @@
-package project.pipepipe.extractor.services.bilibili.metainfo
+package project.pipepipe.extractor.services.bilibili.extractor
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import org.apache.commons.lang3.StringEscapeUtils
 import project.pipepipe.extractor.Extractor
-import project.pipepipe.extractor.ExtractorContext
 import project.pipepipe.extractor.services.bilibili.BiliBiliLinks
 import project.pipepipe.extractor.services.bilibili.BilibiliService
 import project.pipepipe.extractor.services.bilibili.Utils
@@ -33,7 +32,7 @@ class BiliBiliCommentExtractor(url: String) : Extractor<Nothing, CommentInfo>(ur
                         RequestMethod.GET, url, BilibiliService.getUserAgentHeaders(BiliBiliLinks.WWW_REFERER)
                     )
                 )
-            ), state = PlainState(0))
+            ), state = PlainState(1))
         } else {
             val data = clientResults!!.first { it.taskId.isDefaultTask() }.result!!.asJson().requireObject("data")
             runCatching {
@@ -64,7 +63,7 @@ class BiliBiliCommentExtractor(url: String) : Extractor<Nothing, CommentInfo>(ur
                         RequestMethod.GET, url, BilibiliService.getUserAgentHeaders(BiliBiliLinks.WWW_REFERER)
                     )
                 )
-            ), state = PlainState(0))
+            ), state = PlainState(1))
         } else {
             val data = clientResults!!.first { it.taskId.isDefaultTask() }.result!!.asJson().requireObject("data")
             val replies = data.requireArray("replies")

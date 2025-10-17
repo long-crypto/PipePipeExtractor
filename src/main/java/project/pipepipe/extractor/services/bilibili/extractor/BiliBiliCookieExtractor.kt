@@ -1,4 +1,4 @@
-package project.pipepipe.extractor.services.bilibili.metainfo
+package project.pipepipe.extractor.services.bilibili.extractor
 
 import project.pipepipe.extractor.base.CookieExtractor
 import project.pipepipe.extractor.services.bilibili.BiliBiliLinks
@@ -38,8 +38,8 @@ class BiliBiliCookieExtractor: CookieExtractor(){
                         BiliBiliLinks.WWW_REFERER
                     )
                 ))
-            ), state = CookieState(0, CookieInfo(null, -1)))
-        } else if (currentState.step == 0){
+            ), state = CookieState(1, CookieInfo(null, -1)))
+        } else if (currentState.step == 1){
             val cookies = linkedMapOf<String, String>()
             val result  = clientResults!!.first { it.taskId.isDefaultTask() }
             val data = result.result!!.asJson().requireObject("data")
@@ -72,8 +72,8 @@ class BiliBiliCookieExtractor: CookieExtractor(){
 
             return JobStepResult.ContinueWith(listOf(ClientTask(payload = Payload(
                 RequestMethod.POST, url, headers
-            ))), state = CookieState(1, CookieInfo(mapToCookieHeader(cookies), -1)))
-        } else if (currentState.step == 1) {
+            ))), state = CookieState(2, CookieInfo(mapToCookieHeader(cookies), -1)))
+        } else if (currentState.step == 2) {
             val cookieInfo = (currentState as CookieState).cookieInfo
             var cookie = cookieInfo.cookie
             val data = clientResults!!.first { it.taskId.isDefaultTask() }.result!!.asJson().requireObject("data")

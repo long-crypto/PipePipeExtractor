@@ -14,7 +14,6 @@ import project.pipepipe.shared.utils.json.requireDouble
 import project.pipepipe.shared.utils.json.requireLong
 import project.pipepipe.shared.utils.json.requireString
 import java.io.*
-import java.lang.IllegalArgumentException
 import java.math.BigInteger
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -298,26 +297,10 @@ object Utils {
         }
     }
 
-    @Throws(IOException::class)
     fun decompressBrotli(body: ByteArray): String {
-        return try {
-            // Check if lines() method exists (SDK > 24)
-            BufferedReader::class.java.getMethod("lines")
-            BufferedReader(InputStreamReader(BrotliInputStream(ByteArrayInputStream(body))))
-                .lines()
-                .collect(Collectors.joining())
-        } catch (e: Exception) {
-            // For SDK <= 24
-            val bais = ByteArrayInputStream(body)
-            val inputStream = BrotliInputStream(bais)
-            val br = BufferedReader(InputStreamReader(inputStream))
-            val sb = StringBuilder()
-            var line: String?
-            while (br.readLine().also { line = it } != null) {
-                sb.append(line)
-            }
-            sb.toString()
-        }
+        return BufferedReader(InputStreamReader(BrotliInputStream(ByteArrayInputStream(body))))
+            .lines()
+            .collect(Collectors.joining())
     }
 
     fun getNextPageFromCurrentUrl(
@@ -386,7 +369,7 @@ object Utils {
             if (wbiMixinKey == null || wbiMixinKeyDate?.isBefore(currentDate) == true) {
                 val responseBody = runBlocking { ExtractorContext.downloader.get(
                     BiliBiliLinks.WBI_IMG_URL,
-                    BilibiliService.Companion.getHeaders(BiliBiliLinks.WWW_REFERER, cookie)
+                    BilibiliService.Companion.getHeadersWithCookie(BiliBiliLinks.WWW_REFERER, cookie)
                 ).bodyAsText() }
                 val imgUrl = responseBody.split("\"img_url\":\"")[1].split("\"")[0]
                 val subUrl = responseBody.split("\"sub_url\":\"")[1].split("\"")[0]

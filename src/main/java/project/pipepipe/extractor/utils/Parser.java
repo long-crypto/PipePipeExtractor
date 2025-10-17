@@ -1,29 +1,8 @@
-/*
- * Created by Christian Schabesberger on 02.02.16.
- *
- * Copyright (C) Christian Schabesberger 2016 <chris.schabesberger@mailbox.org>
- * Parser.java is part of NewPipe Extractor.
- *
- * NewPipe Extractor is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * NewPipe Extractor is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with NewPipe Extractor. If not, see <https://www.gnu.org/licenses/>.
- */
-
 package project.pipepipe.extractor.utils;
 
 import org.nibor.autolink.LinkExtractor;
 import org.nibor.autolink.LinkSpan;
 import org.nibor.autolink.LinkType;
-import project.pipepipe.extractor.exceptions.ParsingException;
 
 import javax.annotation.Nonnull;
 import java.io.UnsupportedEncodingException;
@@ -42,31 +21,25 @@ public final class Parser {
     private Parser() {
     }
 
-    public static class RegexException extends ParsingException {
-        public RegexException(final String message) {
-            super(message);
-        }
-    }
 
-    public static String matchGroup1(final String pattern, final String input)
-            throws RegexException {
+    public static String matchGroup1(final String pattern, final String input){
         return matchGroup(pattern, input, 1);
     }
 
     public static String matchGroup1(final Pattern pattern,
-                                     final String input) throws RegexException {
+                                     final String input) {
         return matchGroup(pattern, input, 1);
     }
 
     public static String matchGroup(final String pattern,
                                     final String input,
-                                    final int group) throws RegexException {
+                                    final int group){
         return matchGroup(Pattern.compile(pattern), input, group);
     }
 
     public static String matchGroup(@Nonnull final Pattern pat,
                                     final String input,
-                                    final int group) throws RegexException {
+                                    final int group){
         final Matcher matcher = pat.matcher(input);
         final boolean foundMatch = matcher.find();
         if (foundMatch) {
@@ -74,27 +47,24 @@ public final class Parser {
         } else {
             // only pass input to exception message when it is not too long
             if (input.length() > 1024) {
-                throw new RegexException("Failed to find pattern \"" + pat.pattern() + "\"");
+                throw new IllegalStateException("Failed to find pattern \"" + pat.pattern() + "\"");
             } else {
-                throw new RegexException("Failed to find pattern \"" + pat.pattern()
+                throw new IllegalStateException("Failed to find pattern \"" + pat.pattern()
                         + "\" inside of \"" + input + "\"");
             }
         }
     }
 
-    public static String matchGroup1MultiplePatterns(final Pattern[] patterns, final String input)
-            throws RegexException {
+    public static String matchGroup1MultiplePatterns(final Pattern[] patterns, final String input){
         return matchMultiplePatterns(patterns, input).group(1);
     }
 
-    public static String matchGroup2MultiplePatterns(final Pattern[] patterns, final String input)
-            throws RegexException {
+    public static String matchGroup2MultiplePatterns(final Pattern[] patterns, final String input) {
         return matchMultiplePatterns(patterns, input).group(2);
     }
 
-    public static Matcher matchMultiplePatterns(final Pattern[] patterns, final String input)
-            throws RegexException {
-        Parser.RegexException exception = null;
+    public static Matcher matchMultiplePatterns(final Pattern[] patterns, final String input) {
+        IllegalStateException exception = null;
         for (final Pattern pattern : patterns) {
             final Matcher matcher = pattern.matcher(input);
             if (matcher.find()) {
@@ -102,17 +72,17 @@ public final class Parser {
             } else if (exception == null) {
                 // only pass input to exception message when it is not too long
                 if (input.length() > 1024) {
-                    exception = new RegexException("Failed to find pattern \"" + pattern.pattern()
+                    exception = new IllegalStateException("Failed to find pattern \"" + pattern.pattern()
                             + "\"");
                 } else {
-                    exception = new RegexException("Failed to find pattern \"" + pattern.pattern()
+                    exception = new IllegalStateException("Failed to find pattern \"" + pattern.pattern()
                             + "\" inside of \"" + input + "\"");
                 }
             }
         }
 
         if (exception == null) {
-            throw new RegexException("Empty patterns array passed to matchMultiplePatterns");
+            throw new IllegalStateException("Empty patterns array passed to matchMultiplePatterns");
         } else {
             throw exception;
         }
@@ -145,7 +115,7 @@ public final class Parser {
     }
 
     @Nonnull
-    public static String[] getLinksFromString(final String txt) throws ParsingException {
+    public static String[] getLinksFromString(final String txt) {
         try {
             final List<String> links = new ArrayList<>();
             final LinkExtractor linkExtractor = LinkExtractor.builder()
@@ -160,7 +130,7 @@ public final class Parser {
             linksarray = links.toArray(linksarray);
             return linksarray;
         } catch (final Exception e) {
-            throw new ParsingException("Could not get links from string", e);
+            throw new IllegalStateException("Could not get links from string", e);
         }
     }
 }

@@ -1,7 +1,6 @@
-package project.pipepipe.extractor.services.bilibili.metainfo
+package project.pipepipe.extractor.services.bilibili.extractor
 
 import project.pipepipe.extractor.Extractor
-import project.pipepipe.extractor.ExtractorContext
 import project.pipepipe.extractor.Router.setType
 import project.pipepipe.extractor.services.bilibili.BiliBiliLinks
 import project.pipepipe.extractor.services.bilibili.BilibiliService
@@ -34,7 +33,7 @@ class BiliBiliRelatedItemsExtractor(
         cookie: String?
     ): JobStepResult {
         val bvid = url.split("/").last().split("?")[0]
-        val headers = BilibiliService.getHeaders(url, cookie!!)
+        val headers = BilibiliService.getHeadersWithCookie(url, cookie!!)
         if (currentState == null) {
             return JobStepResult.ContinueWith(listOf(
                 ClientTask(taskId = "related", payload = Payload(
@@ -47,15 +46,15 @@ class BiliBiliRelatedItemsExtractor(
                     BiliBiliLinks.GET_PARTITION_URL + bvid,
                     headers
                 )),
-            ), state = PlainState(0))
+            ), state = PlainState(1))
         } else {
             val relatedData = clientResults!!.first { it.taskId == "related" }.result!!.asJson().requireArray("data")
             val partitionData = clientResults.first { it.taskId == "partition" }.result!!.asJson().requireArray("data")
             relatedData.forEach {
-                commit(BiliBiliStreamInfoDataParser.parseFromRelatedInfoJson(it))
+                commit { (BiliBiliStreamInfoDataParser.parseFromRelatedInfoJson(it)) }
             }
             partitionData.forEachIndexed {i, e ->
-                commitPartition(BiliBiliStreamInfoDataParser.parseFromPartitionInfoJson(e, bvid,i + 1))
+                commitPartition { (BiliBiliStreamInfoDataParser.parseFromPartitionInfoJson(e, bvid, i + 1)) }
             }
             return JobStepResult.CompleteWith(ExtractResult(RelatedItemInfo(url.setType("related"), partitionList), errors, PagedData(itemList, null)))
         }

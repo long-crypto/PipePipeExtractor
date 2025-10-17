@@ -86,7 +86,7 @@ class YouTubeService(id: String) : StreamingService(id)  {
             suggestionStringPath = Pair("/1", "/0"),
             suggestionJsonBetween = Pair("JP(", ")"),
             availableSearchTypes = listOf(
-                SearchType("all", "$SEARCH_RAW_URL?query=", sortFilters),
+//                SearchType("all", "$SEARCH_RAW_URL?query=", sortFilters),
                 SearchType("video", "$SEARCH_RAW_URL?type=video&query=", sortFilters),
                 SearchType("channel", "$SEARCH_RAW_URL?type=channel&query=", listOf(sortByFilterGroup)),
                 SearchType("playlist", "$SEARCH_RAW_URL?type=playlist&query=", listOf(sortByFilterGroup)),

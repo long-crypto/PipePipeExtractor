@@ -19,8 +19,15 @@ class NicoNicoService(id: String): StreamingService(id)  {
         val GOOGLE_HEADER = mapOf(
             "User-Agent" to "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
         )
+        val NICO_BASE_HEADER = mapOf(
+            "Referer" to "https://www.nicovideo.jp/",
+            "X-Frontend-Id" to "6",
+            "X-Frontend-Version" to "0",
+        )
         fun isChannel(watchData: JsonNode): Boolean {
-            return !watchData.at("/data/response/owner/channel").asText().isNullOrEmpty()
+            return watchData.at("/data/response/owner/channel").asText().let {
+                !it.isNullOrEmpty() && it != "null"
+            }
         }
         const val TRENDING_RSS_STR: String = "^第\\d+位：(.*)$"
         const val SMILEVIDEO: String = "(nicovideo\\.jp\\/watch|nico\\.ms)\\/(.+)?"

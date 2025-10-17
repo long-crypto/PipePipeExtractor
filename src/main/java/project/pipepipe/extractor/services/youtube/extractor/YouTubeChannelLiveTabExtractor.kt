@@ -5,7 +5,7 @@ import project.pipepipe.extractor.services.youtube.YouTubeLinks.BROWSE_URL
 import project.pipepipe.extractor.services.youtube.YouTubeLinks.TAB_RAW_URL
 import project.pipepipe.extractor.services.youtube.YouTubeRequestHelper.WEB_HEADER
 import project.pipepipe.extractor.services.youtube.YouTubeRequestHelper.getChannelInfoBody
-import project.pipepipe.extractor.services.youtube.dataparser.YouTubeStreamInfoDataParser.parseVideoRenderer
+import project.pipepipe.extractor.services.youtube.dataparser.YouTubeStreamInfoDataParser.parseFromVideoRenderer
 import project.pipepipe.extractor.utils.RequestHelper.getQueryValue
 import project.pipepipe.shared.infoitem.ChannelTabType
 import project.pipepipe.shared.infoitem.StreamInfo
@@ -45,7 +45,7 @@ class YouTubeChannelLiveTabExtractor(
                             getChannelInfoBody(getQueryValue(url, "id")!!, ChannelTabType.LIVES)
                         )
                     )
-                ), PlainState(0)
+                ), PlainState(1)
             )
         } else {
             val result = clientResults!!.first { it.taskId.isDefaultTask() }.result!!.asJson()
@@ -57,7 +57,7 @@ class YouTubeChannelLiveTabExtractor(
                 if (runCatching{ it.requireString("/tabRenderer/title") }.getOrNull() == "Live") {
                     it.requireArray("/tabRenderer/content/richGridRenderer/contents").mapNotNull {
                         runCatching{ it.requireObject("/richItemRenderer/content") }.getOrNull()?.let {
-                            commit { parseVideoRenderer(it, name, id) }
+                            commit { parseFromVideoRenderer(it, name, id) }
                         }
                     }
                     runCatching{

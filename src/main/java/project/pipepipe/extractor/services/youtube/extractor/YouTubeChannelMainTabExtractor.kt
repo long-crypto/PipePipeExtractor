@@ -9,7 +9,7 @@ import project.pipepipe.extractor.services.youtube.YouTubeRequestHelper.getChann
 import project.pipepipe.extractor.services.youtube.YouTubeRequestHelper.getChannelInfoBody
 import project.pipepipe.extractor.services.youtube.YouTubeRequestHelper.getContinuationBody
 import project.pipepipe.extractor.services.youtube.dataparser.YouTubeChannelIdParser.parseChannelId
-import project.pipepipe.extractor.services.youtube.dataparser.YouTubeStreamInfoDataParser.parseVideoRenderer
+import project.pipepipe.extractor.services.youtube.dataparser.YouTubeStreamInfoDataParser.parseFromVideoRenderer
 import project.pipepipe.extractor.utils.parseNumberWithSuffix
 import project.pipepipe.extractor.utils.RequestHelper.getQueryValue
 import project.pipepipe.shared.infoitem.ChannelInfo
@@ -49,7 +49,7 @@ class YouTubeChannelMainTabExtractor(
                                 getChannelInfoBody(id, ChannelTabType.VIDEOS)
                             )
                         )
-                    ), PlainState(1)
+                    ), PlainState(2)
                 )
             } else {
                 return JobStepResult.ContinueWith(
@@ -62,10 +62,10 @@ class YouTubeChannelMainTabExtractor(
                                 getChannelIdBody(url)
                             )
                         )
-                    ), PlainState(0)
+                    ), PlainState(1)
                 )
             }
-        } else if (currentState.step == 0) {
+        } else if (currentState.step == 1) {
             val result = clientResults!!.first { it.taskId.isDefaultTask() }.result!!.asJson()
             val id = result.requireString("/endpoint/browseEndpoint/browseId")
             return JobStepResult.ContinueWith(listOf(
@@ -75,8 +75,8 @@ class YouTubeChannelMainTabExtractor(
                     WEB_HEADER,
                     getChannelInfoBody(id, ChannelTabType.VIDEOS)
                 ))
-            ), PlainState(1))
-        } else if (currentState.step == 1) {
+            ), PlainState(2))
+        } else if (currentState.step == 2) {
             val result = clientResults!!.first { it.taskId.isDefaultTask() }.result!!.asJson()
             val name = result.requireString("/metadata/channelMetadataRenderer/title")
             val nameEncoded = URLEncoder.encode(name, "UTF-8")
@@ -92,7 +92,7 @@ class YouTubeChannelMainTabExtractor(
                          ))
                          it.requireArray("/tabRenderer/content/richGridRenderer/contents").mapNotNull {
                              runCatching{ it.requireObject("/richItemRenderer/content") }.getOrNull()?.let {
-                                 commit { parseVideoRenderer(it, name, id) }
+                                 commit { parseFromVideoRenderer(it, name, id) }
                              }
                          }
                          runCatching{
@@ -125,7 +125,6 @@ class YouTubeChannelMainTabExtractor(
                     serviceId = "YOUTUBE",
                     thumbnailUrl = result.requireArray("/metadata/channelMetadataRenderer/avatar/thumbnails").last().requireString("url"),
                     bannerUrl = runCatching{ result.requireArray("/header/pageHeaderRenderer/content/pageHeaderViewModel/banner/imageBannerViewModel/image/sources").last().requireString("url") }.getOrNull(),
-                    feedUrl = null,
                     description = result.requireString("/metadata/channelMetadataRenderer/description"),
                     subscriberCount = safeGet{
                         parseNumberWithSuffix(
@@ -134,7 +133,6 @@ class YouTubeChannelMainTabExtractor(
                                 .requireString("/metadataParts/0/text/content")
                         )
                     },
-                    isVerified = false,
                     tabs = tabs
                 ),
                 errors = errors,
@@ -164,7 +162,7 @@ class YouTubeChannelMainTabExtractor(
                             getContinuationBody(getQueryValue(url, "continuation")!!)
                         )
                     )
-                ), PlainState(0)
+                ), PlainState(1)
             )
         } else {
             val result = clientResults!!.first { it.taskId.isDefaultTask() }.result!!.asJson()
@@ -172,7 +170,7 @@ class YouTubeChannelMainTabExtractor(
             result.requireArray("/onResponseReceivedActions/0/appendContinuationItemsAction/continuationItems").forEach {
                 val videoRenderer = runCatching { it.requireObject("/richItemRenderer/content") }.getOrNull()
                 if (videoRenderer != null) {
-                    commit { parseVideoRenderer(
+                    commit { parseFromVideoRenderer(
                         data = videoRenderer,
                         overrideChannelName = URLDecoder.decode(getQueryValue(url, "name"), "UTF-8"),
                         overrideChannelId = getQueryValue(url, "id")

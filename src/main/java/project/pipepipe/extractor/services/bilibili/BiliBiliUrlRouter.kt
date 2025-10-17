@@ -6,8 +6,11 @@ import project.pipepipe.extractor.Router.resetType
 import project.pipepipe.extractor.services.bilibili.BiliBiliLinks.COMMENT_REPLIES_URL
 import project.pipepipe.extractor.services.bilibili.BiliBiliLinks.DANMAKU_RAW_URL
 import project.pipepipe.extractor.services.bilibili.BiliBiliLinks.FETCH_COMMENTS_URL
+import project.pipepipe.extractor.services.bilibili.BiliBiliLinks.GET_SEASON_ARCHIVES_LIST_BASE_URL
+import project.pipepipe.extractor.services.bilibili.BiliBiliLinks.LIVE_BASE_URL
 import project.pipepipe.extractor.services.bilibili.BiliBiliLinks.SEARCH_BASE_URL
-import project.pipepipe.extractor.services.bilibili.metainfo.*
+import project.pipepipe.extractor.services.bilibili.extractor.BiliBiliLiveStreamExtractor
+import project.pipepipe.extractor.services.bilibili.extractor.*
 
 object BiliBiliUrlRouter {
 
@@ -16,9 +19,12 @@ object BiliBiliUrlRouter {
             url.contains(DANMAKU_RAW_URL) -> BilibiliDanmakuExtractor(url)
             url.getType() == "related" && acceptsStreamUrl(url) -> BiliBiliRelatedItemsExtractor(url.resetType())
             url.contains(FETCH_COMMENTS_URL) || url.contains(COMMENT_REPLIES_URL) -> BiliBiliCommentExtractor(url)
+            url.contains(GET_SEASON_ARCHIVES_LIST_BASE_URL) -> BiliBiliChannelPlaylistTabExtractor(url)
+            url.contains(SEARCH_BASE_URL) -> BiliBiliSearchExtractor(url)
+            url.contains(LIVE_BASE_URL) -> BiliBiliLiveStreamExtractor(url)
+            acceptsPlaylistUrl(url) -> BiliBiliPlaylistExtractor(url)
             acceptsStreamUrl(url) -> BiliBiliStreamExtractor(url)
             acceptsChannelUrl(url) -> BiliBiliChannelMainTabExtractor(url)
-            url.contains(SEARCH_BASE_URL) -> BiliBiliSearchExtractor(url)
 //            acceptsChannelUrl(url) -> BiliBiliChannelExtractor(
 //                BiliBiliUrlParser.urlFromChannelId(
 //                    BiliBiliUrlParser.parseChannelId(
@@ -27,7 +33,7 @@ object BiliBiliUrlRouter {
 //                )
 //            )
 
-//            acceptsFeedUrl(url) -> BiliBiliRecommendationExtractor(url)
+            acceptsTrendingUrl(url) -> BiliBiliTrendingExtractor(url)
 //            acceptsPlaylistUrl(url) -> BiliBiliPlaylistExtractor(url)
             else -> null
         }
@@ -49,9 +55,8 @@ object BiliBiliUrlRouter {
         }
     }
 
-    private fun acceptsFeedUrl(url: String): Boolean {
-        return url == BiliBiliLinks.FETCH_RECOMMENDED_VIDEOS_URL ||
-                url.contains(BiliBiliLinks.FETCH_RECOMMENDED_LIVES_URL) ||
+    private fun acceptsTrendingUrl(url: String): Boolean {
+        return url.contains(BiliBiliLinks.FETCH_RECOMMENDED_LIVES_URL) ||
                 url == BiliBiliLinks.FETCH_TOP_100_URL
     }
 

@@ -9,6 +9,9 @@ import project.pipepipe.extractor.services.youtube.dataparser.YouTubeStreamInfoD
 
 import project.pipepipe.shared.state.State
 import project.pipepipe.extractor.ExtractorContext.asJson
+import project.pipepipe.extractor.services.youtube.dataparser.YouTubeChannelInfoDataParser
+import project.pipepipe.extractor.services.youtube.dataparser.YouTubePlaylistInfoDataParser
+import project.pipepipe.extractor.utils.RequestHelper.getQueryValue
 import project.pipepipe.shared.utils.json.requireArray
 import project.pipepipe.shared.utils.json.requireString
 import project.pipepipe.shared.job.ClientTask
@@ -46,16 +49,25 @@ class YouTubeSearchExtractor(url: String): SearchExtractor(url) {
                         RequestMethod.POST, SEARCH_URL, WEB_HEADER, getSearchBody(url)
                     )
                 )
-            ), state = PlainState(0))
+            ), state = PlainState(1))
         } else {
             val jsonNode = clientResults!!.first { it.taskId.isDefaultTask() }.result!!.asJson()
             val data = runCatching {
                 jsonNode.requireArray("/contents/twoColumnSearchResultsRenderer/primaryContents/sectionListRenderer/contents")
             }.getOrNull() ?: jsonNode.requireArray("/onResponseReceivedCommands/0/appendContinuationItemsAction/continuationItems")
 
-            data.first { it.has("itemSectionRenderer") }.requireArray("/itemSectionRenderer/contents").filter { it.has("videoRenderer") }.forEach {
-                commit { YouTubeStreamInfoDataParser.parseVideoRenderer(it) }
+            when (getQueryValue(url, "type")) {
+                "video", "movie" -> data.first { it.has("itemSectionRenderer") }.requireArray("/itemSectionRenderer/contents").filter { it.has("videoRenderer") }.forEach {
+                    commit { YouTubeStreamInfoDataParser.parseFromVideoRenderer(it) }
+                }
+                "playlist" -> data.first { it.has("itemSectionRenderer") }.requireArray("/itemSectionRenderer/contents").filter { it.has("lockupViewModel") }.forEach{
+                    commit { YouTubePlaylistInfoDataParser.parseFromLockupMetadataViewModel(it) }
+                }
+                "channel" -> data.first { it.has("itemSectionRenderer") }.requireArray("/itemSectionRenderer/contents").filter { it.has("channelRenderer") }.forEach {
+                    commit { YouTubeChannelInfoDataParser.parseFromChannelRenderer(it) }
+                }
             }
+
             val continuation = data.first {it.has("continuationItemRenderer")}.requireString("/continuationItemRenderer/continuationEndpoint/continuationCommand/token")
             return JobStepResult.CompleteWith(ExtractResult(errors = errors, pagedData = PagedData(
                 itemList, "$SEARCH_RAW_URL?continuation=$continuation"

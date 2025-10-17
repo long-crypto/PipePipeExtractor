@@ -1,4 +1,4 @@
-package project.pipepipe.extractor.services.bilibili.metainfo
+package project.pipepipe.extractor.services.bilibili.extractor
 
 import project.pipepipe.extractor.base.SearchExtractor
 import project.pipepipe.extractor.services.bilibili.BilibiliService
@@ -10,7 +10,6 @@ import project.pipepipe.extractor.ExtractorContext.asJson
 import project.pipepipe.shared.utils.json.requireArray
 import project.pipepipe.shared.utils.json.requireObject
 import project.pipepipe.shared.utils.json.requireString
-import project.pipepipe.shared.infoitem.StreamInfo
 import project.pipepipe.shared.job.*
 import project.pipepipe.shared.state.PlainState
 
@@ -36,10 +35,10 @@ class BiliBiliSearchExtractor(url: String): SearchExtractor(url) {
                 ClientTask(
                     payload = Payload(
                         RequestMethod.GET, url,
-                        BilibiliService.getHeaders(url, cookie!!)
+                        BilibiliService.getHeadersWithCookie(url, cookie!!)
                     )
                 )
-            ), state = PlainState(0))
+            ), state = PlainState(1))
         } else {
             val data = clientResults!!.first { it.taskId.isDefaultTask() }.result!!.asJson()
                 .requireObject("data").requireArray("result")
@@ -47,10 +46,10 @@ class BiliBiliSearchExtractor(url: String): SearchExtractor(url) {
             data.forEach { item ->
                 val type = item.requireString("type")
                 when (type) {
-                    "video" -> commit<StreamInfo>(BiliBiliStreamInfoDataParser.parseFromStreamInfoJson(item))
-//                    "live_room" -> commit<StreamInfo>(BiliBiliStreamInfoDataParser.parseFromLiveInfoJson(item, 0))
+                    "video" -> commit { (BiliBiliStreamInfoDataParser.parseFromStreamInfoJson(item)) }
+                    "live_room" -> commit { (BiliBiliStreamInfoDataParser.parseFromLiveInfoJson(item, 0)) }
                     "bili_user" -> commit{BiliBiliChannelInfoDataParser.parseFromChannelSearchJson(item)}
-//                    "media_bangumi", "media_ft" -> commit<StreamInfo>(BiliBiliStreamInfoDataParser.parseFromPremiumContentJson(item))
+                    "media_bangumi", "media_ft" -> commit{BiliBiliStreamInfoDataParser.parseFromPremiumContentJson(item)}
                 }
             }
             return JobStepResult.CompleteWith(ExtractResult(errors = errors, pagedData = PagedData(
