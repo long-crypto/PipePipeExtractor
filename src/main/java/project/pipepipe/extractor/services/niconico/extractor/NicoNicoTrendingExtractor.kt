@@ -6,7 +6,6 @@ import project.pipepipe.extractor.Extractor
 import project.pipepipe.extractor.ExtractorContext.asJson
 import project.pipepipe.extractor.services.niconico.NicoNicoService.Companion.GOOGLE_HEADER
 import project.pipepipe.extractor.services.niconico.dataparser.NicoNicoStreamInfoDataParser
-import project.pipepipe.shared.infoitem.RecommendationInfo
 import project.pipepipe.shared.infoitem.StreamInfo
 import project.pipepipe.shared.job.*
 import project.pipepipe.shared.state.PlainState
@@ -14,7 +13,7 @@ import project.pipepipe.shared.state.State
 import project.pipepipe.shared.utils.json.requireArray
 import project.pipepipe.shared.utils.json.requireObject
 
-class NicoNicoTrendingExtractor(url: String) : Extractor<RecommendationInfo, StreamInfo>(url) {
+class NicoNicoTrendingExtractor(url: String) : Extractor<Nothing, StreamInfo>(url) {
     override suspend fun fetchInfo(
         sessionId: String,
         currentState: State?,
@@ -62,7 +61,6 @@ class NicoNicoTrendingExtractor(url: String) : Extractor<RecommendationInfo, Str
 
             return JobStepResult.CompleteWith(
                 result = ExtractResult(
-                    info = RecommendationInfo(url, "Trending"),
                     errors = errors,
                     pagedData = PagedData(
                         itemList, null

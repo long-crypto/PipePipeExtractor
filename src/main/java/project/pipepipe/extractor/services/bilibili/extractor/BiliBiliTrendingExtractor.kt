@@ -6,7 +6,6 @@ import project.pipepipe.extractor.services.bilibili.BiliBiliLinks.FETCH_RECOMMEN
 import project.pipepipe.extractor.services.bilibili.BiliBiliLinks.FETCH_TOP_100_URL
 import project.pipepipe.extractor.services.bilibili.BilibiliService
 import project.pipepipe.extractor.services.bilibili.dataparser.BiliBiliStreamInfoDataParser
-import project.pipepipe.shared.infoitem.RecommendationInfo
 import project.pipepipe.shared.infoitem.StreamInfo
 import project.pipepipe.shared.job.*
 import project.pipepipe.shared.state.PlainState
@@ -14,7 +13,7 @@ import project.pipepipe.shared.state.State
 import project.pipepipe.shared.utils.json.requireArray
 import project.pipepipe.shared.utils.json.requireObject
 
-class BiliBiliTrendingExtractor(url: String) : Extractor<RecommendationInfo, StreamInfo>(url) {
+class BiliBiliTrendingExtractor(url: String) : Extractor<Nothing, StreamInfo>(url) {
     override suspend fun fetchInfo(
         sessionId: String,
         currentState: State?,
@@ -52,11 +51,6 @@ class BiliBiliTrendingExtractor(url: String) : Extractor<RecommendationInfo, Str
             }
             return JobStepResult.CompleteWith(
                 result = ExtractResult(
-                    info = RecommendationInfo(url, when (url) {
-                        FETCH_TOP_100_URL -> "Top 100"
-                        FETCH_RECOMMENDED_LIVES_URL -> "Recommended Lives"
-                        else -> error("")
-                    }),
                     errors = errors,
                     pagedData = PagedData(
                         itemList, null

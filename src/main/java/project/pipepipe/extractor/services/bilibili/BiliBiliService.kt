@@ -5,6 +5,7 @@ import project.pipepipe.extractor.services.bilibili.BiliBiliLinks.GET_SUGGESTION
 import project.pipepipe.extractor.services.bilibili.BiliBiliLinks.SEARCH_BASE_URL
 import project.pipepipe.extractor.services.bilibili.extractor.BiliBiliCookieExtractor
 import project.pipepipe.extractor.utils.UtilsOld
+import project.pipepipe.shared.infoitem.TrendingInfo
 import project.pipepipe.shared.infoitem.SupportedServiceInfo
 import project.pipepipe.shared.infoitem.helper.SearchFilterGroup
 import project.pipepipe.shared.infoitem.helper.SearchFilterItem
@@ -94,8 +95,8 @@ class BilibiliService(id: String) : StreamingService(id) {
                 SearchType("movies_and_tv", "$SEARCH_BASE_URL?search_type=media_ft&keyword=")
             ),
             trendingList = listOf(
-                BiliBiliLinks.FETCH_TOP_100_URL,
-                BiliBiliLinks.FETCH_RECOMMENDED_LIVES_URL,
+                TrendingInfo(BiliBiliLinks.FETCH_TOP_100_URL, "BILIBILI", "trending"),
+                TrendingInfo(BiliBiliLinks.FETCH_RECOMMENDED_LIVES_URL, "BILIBILI", "trending_live"),
             ),
             feedFetchInterval = 3000,
             themeColor = "#FB7299"
