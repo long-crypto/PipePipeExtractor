@@ -165,7 +165,7 @@ class YouTubeStreamExtractor(
                     reason != null && reason.contains("Sign in to confirm", ignoreCase = true) -> {
                         return JobStepResult.FailWith(
                             ErrorDetail(
-                                code = "LOGIN_001",
+                                code = "RISK_002",
                                 stackTrace = IllegalStateException(reason).stackTraceToString()
                             )
                         )
@@ -207,16 +207,16 @@ class YouTubeStreamExtractor(
                 name = playData.requireString("/playerResponse/videoDetails/title"),
                 uploaderName = playData.requireString("/playerResponse/videoDetails/author"),
                 uploadDate = safeGet { OffsetDateTime.parse(info.requireString("/microformat/playerMicroformatRenderer/uploadDate")).toInstant().toEpochMilli() },
-                viewCount = safeGet { info.requireLong("/microformat/playerMicroformatRenderer/viewCount") },
+                viewCount = safeGet { playData.requireString("/playerResponse/videoDetails/viewCount").toLong() },
                 uploaderUrl = safeGet { CHANNEL_URL + playData.requireString("/playerResponse/videoDetails/channelId") },
                 uploaderAvatarUrl = safeGet { nextData.requireArray("/contents/twoColumnWatchNextResults/results/results/contents/1/videoSecondaryInfoRenderer/owner/videoOwnerRenderer/thumbnail/thumbnails").last().requireString("url") },
                 likeCount = safeGet { info.requireLong("/microformat/playerMicroformatRenderer/likeCount") },
                 uploaderSubscriberCount = safeGet { mixedNumberWordToLong(nextData.requireString("/contents/twoColumnWatchNextResults/results/results/contents/1/videoSecondaryInfoRenderer/owner/videoOwnerRenderer/subscriberCountText/simpleText")) },
                 streamSegments = null,
                 previewFrames = null,
-                thumbnailUrl = safeGet { info.requireArray("/videoDetails/thumbnail/thumbnails").last().requireString("url") },
-                description = safeGet { Description(info.requireString("/microformat/playerMicroformatRenderer/description/simpleText"), PLAIN_TEXT) },
-                tags = safeGet{ info.requireArray("/videoDetails/keywords").map { it.asText() } },
+                thumbnailUrl = safeGet { playData.requireArray("/playerResponse/videoDetails/thumbnail/thumbnails").last().requireString("url") },
+                description = safeGet { Description(playData.requireString("/playerResponse/videoDetails/shortDescription"), PLAIN_TEXT) },
+                tags = safeGet{ playData.requireArray("/playerResponse/videoDetails/keywords").map { it.asText() } },
                 commentUrl = safeGet { "$COMMENT_RAW_URL?continuation=${nextData.requireArray("/contents/twoColumnWatchNextResults/results/results/contents").firstNotNullOfOrNull {
                    runCatching { it.requireString("/itemSectionRenderer/contents/0/continuationItemRenderer/continuationEndpoint/continuationCommand/token") }.getOrNull()
                 }}" },
