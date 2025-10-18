@@ -1,5 +1,6 @@
 package project.pipepipe.extractor.services.youtube.extractor
 
+import com.fasterxml.jackson.databind.JsonNode
 import project.pipepipe.extractor.Extractor
 import project.pipepipe.extractor.ExtractorContext
 import project.pipepipe.extractor.services.youtube.YouTubeLinks.CHANNEL_URL
@@ -25,6 +26,7 @@ import project.pipepipe.shared.infoitem.StreamType
 import project.pipepipe.shared.infoitem.helper.stream.AudioStream
 import project.pipepipe.shared.infoitem.helper.stream.Description
 import project.pipepipe.shared.infoitem.helper.stream.Description.Companion.PLAIN_TEXT
+import project.pipepipe.shared.infoitem.helper.stream.Frameset
 import project.pipepipe.shared.infoitem.helper.stream.SubtitleStream
 import project.pipepipe.shared.infoitem.helper.stream.VideoStream
 import project.pipepipe.shared.job.*
@@ -70,8 +72,8 @@ class YouTubeStreamExtractor(
                 )),
             ), state = PlainState(1))
         } else {
-            val info = clientResults!!.first { it.taskId == "info" }.result!!.asJson()
-            val nextData = clientResults.first { it.taskId == "next_data" }.result!!.asJson()  // don't use this if possible as it's not stable
+            val info = clientResults!!.first { it.taskId == "info" }.result!!.asJson() // don't use this if possible as it get risk control very easily
+            val nextData = clientResults.first { it.taskId == "next_data" }.result!!.asJson()
             val playData = clientResults.first { it.taskId == "play_data" }.result!!.asJson()
 
             // Check playability status for errors
@@ -201,6 +203,12 @@ class YouTubeStreamExtractor(
                 runCatching { parseFromLockupViewModel(it) }.getOrNull()
             }
             val isLive = playabilityStatus.has("liveStreamability")
+            var previewFrames = runCatching{ parseYouTubeFrames(info) }.getOrNull() // prefer as it's higher quality
+            if (previewFrames.isNullOrEmpty()) {
+                previewFrames = safeGet {
+                    parseYouTubeFrames(playData.requireObject("/playerResponse"))
+                }
+            }
             val streamInfo = StreamInfo(
                 url = STREAM_URL + id,
                 serviceId = "YOUTUBE",
@@ -213,7 +221,7 @@ class YouTubeStreamExtractor(
                 likeCount = safeGet { info.requireLong("/microformat/playerMicroformatRenderer/likeCount") },
                 uploaderSubscriberCount = safeGet { mixedNumberWordToLong(nextData.requireString("/contents/twoColumnWatchNextResults/results/results/contents/1/videoSecondaryInfoRenderer/owner/videoOwnerRenderer/subscriberCountText/simpleText")) },
                 streamSegments = null,
-                previewFrames = null,
+                previewFrames = previewFrames,
                 thumbnailUrl = safeGet { playData.requireArray("/playerResponse/videoDetails/thumbnail/thumbnails").last().requireString("url") },
                 description = safeGet { Description(playData.requireString("/playerResponse/videoDetails/shortDescription"), PLAIN_TEXT) },
                 tags = safeGet{ playData.requireArray("/playerResponse/videoDetails/keywords").map { it.asText() } },
@@ -286,6 +294,73 @@ class YouTubeStreamExtractor(
                 step = 0,
                 ExtractResult(info = RelatedItemInfo("cache://${sessionId}"), pagedData = PagedData(savedRelatedData, null))
             ))
+        }
+    }
+
+    private fun parseYouTubeFrames(playData: JsonNode): List<Frameset> {
+        try {
+            val storyboards = playData.at("/storyboards")
+            if (storyboards.isMissingNode || storyboards.isNull) {
+                return emptyList()
+            }
+
+            val storyboardsRenderer = when {
+                storyboards.has("playerLiveStoryboardSpecRenderer") ->
+                    storyboards.get("playerLiveStoryboardSpecRenderer")
+                storyboards.has("playerStoryboardSpecRenderer") ->
+                    storyboards.get("playerStoryboardSpecRenderer")
+                else -> return emptyList()
+            }
+
+            if (storyboardsRenderer.isMissingNode || storyboardsRenderer.isNull) {
+                return emptyList()
+            }
+
+            val spec = storyboardsRenderer.get("spec")?.asText() ?: return emptyList()
+            val parts = spec.split("|")
+            if (parts.isEmpty()) return emptyList()
+
+            val baseUrl = parts[0]
+            val result = mutableListOf<Frameset>()
+
+            for (i in 1 until parts.size) {
+                val specParts = parts[i].split("#")
+                if (specParts.size != 8) continue
+
+                val frameWidth = specParts[0].toIntOrNull() ?: continue
+                val frameHeight = specParts[1].toIntOrNull() ?: continue
+                val totalCount = specParts[2].toIntOrNull() ?: continue
+                val framesPerPageX = specParts[3].toIntOrNull() ?: continue
+                val framesPerPageY = specParts[4].toIntOrNull() ?: continue
+                val durationPerFrame = specParts[5].toIntOrNull() ?: continue
+
+                if (durationPerFrame == 0) continue
+
+                val urlTemplate = baseUrl.replace("\$L", (i - 1).toString())
+                    .replace("\$N", specParts[6]) + "&sigh=" + specParts[7]
+
+                val urls = if (urlTemplate.contains("\$M")) {
+                    val totalPages = kotlin.math.ceil(totalCount.toDouble() / (framesPerPageX * framesPerPageY)).toInt()
+                    (0 until totalPages).map { j ->
+                        urlTemplate.replace("\$M", j.toString())
+                    }
+                } else {
+                    listOf(urlTemplate)
+                }
+
+                result.add(Frameset(
+                    urls = urls,
+                    frameWidth = frameWidth,
+                    frameHeight = frameHeight,
+                    totalCount = totalCount,
+                    durationPerFrame = durationPerFrame,
+                    framesPerPageX = framesPerPageX,
+                    framesPerPageY = framesPerPageY
+                ))
+            }
+            return result
+        } catch (e: Exception) {
+            return emptyList()
         }
     }
 

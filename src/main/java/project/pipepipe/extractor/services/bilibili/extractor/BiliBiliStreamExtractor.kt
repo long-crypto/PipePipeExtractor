@@ -17,6 +17,7 @@ import project.pipepipe.shared.infoitem.StaffInfo
 import project.pipepipe.shared.infoitem.StreamInfo
 import project.pipepipe.shared.infoitem.helper.stream.AudioStream
 import project.pipepipe.shared.infoitem.helper.stream.Description
+import project.pipepipe.shared.infoitem.helper.stream.Frameset
 import project.pipepipe.shared.infoitem.helper.stream.VideoStream
 import project.pipepipe.shared.job.ClientTask
 import project.pipepipe.shared.job.ExtractResult
@@ -57,6 +58,11 @@ class BiliBiliStreamExtractor(
                     BiliBiliLinks.FETCH_TAGS_URL + Utils.getPureBV(id),
                     headers = headers
                 )),
+                ClientTask(taskId = "videoshot", payload = Payload(
+                    RequestMethod.GET,
+                    BiliBiliLinks.VIDEOSHOT_API_URL + bvid,
+                    headers = headers
+                )),
             ), state = StreamExtractState(
                 1, StreamInfo(
                     url,
@@ -78,6 +84,7 @@ class BiliBiliStreamExtractor(
     ): JobStepResult {
         val watchData = clientResults.first { it.taskId == "info" }.result!!.asJson().requireObject("data")
         val tagData = clientResults.first { it.taskId == "tags" }.result!!.asJson().requireArray("data")
+        val videoshotData = clientResults.firstOrNull { it.taskId == "videoshot" }?.result?.asJson()
         val pageNumString = UtilsOld.getQueryValue(
             UtilsOld.stringToURL(url),
             "p"
@@ -89,7 +96,7 @@ class BiliBiliStreamExtractor(
 
         val page = watchData.requireArray("pages")[pageNum - 1]
         val cid = page.requireLong("cid")
-        setMetadata(watchData, streamInfo, page, tagData, sessionId, cookie, cid)
+        setMetadata(watchData, streamInfo, page, tagData, sessionId, cookie, cid, videoshotData)
         val baseUrl = BiliBiliLinks.FREE_VIDEO_API_URL
         val streamParams = linkedMapOf<String, String>().apply {
             put("avid", Utils.bv2av(bvid).toString())
@@ -201,7 +208,8 @@ class BiliBiliStreamExtractor(
         tagData: JsonNode,
         sessionId: String,
         cookie: String,
-        cid: Long
+        cid: Long,
+        videoshotData: JsonNode?
     ) {
         val title = watch.requireString("title")
         streamInfo.name = if (watch.requireArray("pages").size() > 1) {
@@ -252,5 +260,67 @@ class BiliBiliStreamExtractor(
         streamInfo.relatedItemUrl = url.setType("related")
         streamInfo.sponsorblockUrl = "sponsorblock://bilibili.raw?id=$bvid"
         streamInfo.headers = hashMapOf("Referer" to "https://www.bilibili.com")
+        streamInfo.previewFrames = parseBiliBiliFrames(videoshotData)
+    }
+
+    private fun parseBiliBiliFrames(videoshotData: JsonNode?): List<Frameset> {
+        try {
+            if (videoshotData == null || videoshotData.requireInt("code") != 0) {
+                return emptyList()
+            }
+
+            val data = videoshotData.get("data")
+            if (data == null || data.isNull || data.isMissingNode) {
+                return emptyList()
+            }
+
+            val imageUrls = data.get("image")
+            val timeIndex = data.get("index")
+
+            if (imageUrls == null || timeIndex == null ||
+                !imageUrls.isArray || !timeIndex.isArray ||
+                imageUrls.isEmpty || timeIndex.isEmpty) {
+                return emptyList()
+            }
+
+            // Get frame properties
+            val frameWidth = data.requireInt("img_x_size")
+            val frameHeight = data.requireInt("img_y_size")
+            val framesPerPageX = runCatching { data.requireInt("img_x_len") }.getOrDefault(10)
+            val framesPerPageY = runCatching { data.requireInt("img_y_len") }.getOrDefault(10)
+            val totalFrames = timeIndex.size() - 1  // Last index is the end time
+
+            // Calculate average duration per frame in milliseconds
+            val durationPerFrame = if (totalFrames > 1) {
+                val totalDuration = timeIndex[totalFrames].asInt() - timeIndex[0].asInt()
+                (totalDuration * 1000) / totalFrames
+            } else {
+                0
+            }
+
+            // Prepare URLs with https protocol
+            val urls = mutableListOf<String>()
+            for (i in 0 until imageUrls.size()) {
+                var url = imageUrls[i].asText()
+                if (url.startsWith("//")) {
+                    url = "https:$url"
+                }
+                urls.add(url)
+            }
+
+            return listOf(
+                Frameset(
+                    urls = urls,
+                    frameWidth = frameWidth,
+                    frameHeight = frameHeight,
+                    totalCount = totalFrames,
+                    durationPerFrame = durationPerFrame,
+                    framesPerPageX = framesPerPageX,
+                    framesPerPageY = framesPerPageY
+                )
+            )
+        } catch (e: Exception) {
+            return emptyList()
+        }
     }
 }
