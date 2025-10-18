@@ -95,8 +95,8 @@ class BilibiliService(id: String) : StreamingService(id) {
                 SearchType("movies_and_tv", "$SEARCH_BASE_URL?search_type=media_ft&keyword=")
             ),
             trendingList = listOf(
-                TrendingInfo(BiliBiliLinks.FETCH_TOP_100_URL, "BILIBILI", "trending"),
-                TrendingInfo(BiliBiliLinks.FETCH_RECOMMENDED_LIVES_URL, "BILIBILI", "trending_live"),
+                TrendingInfo(BiliBiliLinks.FETCH_TOP_100_URL, "BILIBILI", "Trending"),
+                TrendingInfo(BiliBiliLinks.FETCH_RECOMMENDED_LIVES_URL, "BILIBILI", "Recommended Lives"),
             ),
             feedFetchInterval = 3000,
             themeColor = "#FB7299"
