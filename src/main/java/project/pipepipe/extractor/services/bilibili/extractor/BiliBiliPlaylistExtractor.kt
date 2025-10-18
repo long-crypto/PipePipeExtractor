@@ -26,10 +26,14 @@ class BiliBiliPlaylistExtractor(url: String) : Extractor<PlaylistInfo, StreamInf
     ): JobStepResult {
         if (clientResults == null) {
             val headers = BilibiliService.getHeadersWithCookie(url, cookie!!)
-            return JobStepResult.ContinueWith(listOf(
-                ClientTask(taskId = "info", payload = Payload(RequestMethod.GET, url, headers = headers)),
-                ClientTask(taskId = "user_data", payload = Payload(RequestMethod.GET, BiliBiliLinks.QUERY_USER_INFO_URL + Utils.getMidFromRecordApiUrl(url), headers = headers)),
-            ), state = PlainState(1))
+            val requestList = mutableListOf(
+                ClientTask(taskId = "info", payload = Payload(RequestMethod.GET, url, headers = headers))
+            ).apply {
+                if (!url.contains(BiliBiliLinks.GET_PARTITION_URL)) {
+                    add(ClientTask(taskId = "user_data", payload = Payload(RequestMethod.GET, BiliBiliLinks.QUERY_USER_INFO_URL + Utils.getMidFromRecordApiUrl(url), headers = headers)))
+                }
+            }
+            return JobStepResult.ContinueWith(requestList, state = PlainState(1))
         } else {
             val data = clientResults.first { it.taskId == "info" }.result!!.asJson()
 
@@ -49,13 +53,23 @@ class BiliBiliPlaylistExtractor(url: String) : Extractor<PlaylistInfo, StreamInf
     }
 
     private fun handlePartitionPlaylist(data: JsonNode):JobStepResult {
-        val relatedArray = data.requireObject("data").requireArray("data")
+        val relatedArray = data.requireArray("data")
+        val bvid = safeGet{ url.split("bvid=")[1].split("&")[0] }
         val thumbnailUrl = safeGet{URLDecoder.decode(url.split("thumbnail=")[1].split("&")[0], "UTF-8")}
         val uploaderName = safeGet{ URLDecoder.decode(url.split("uploaderName=")[1].split("&")[0], "UTF-8") }
+        val uploaderUrl = safeGet{ URLDecoder.decode(url.split("uploaderUrl=")[1].split("&")[0], "UTF-8") }
+        val uploaderAvatarUrl = safeGet{URLDecoder.decode(url.split("uploaderAvatar=")[1].split("&")[0], "UTF-8")}
 
         relatedArray.forEachIndexed { index, item ->
             commit {
-                BiliBiliStreamInfoDataParser.parseFromRelatedInfoJson(item)
+                BiliBiliStreamInfoDataParser.parseFromPartitionRelatedInfoJson(
+                    item = item,
+                    bvid = bvid!!,
+                    thumbnailUrl = thumbnailUrl,
+                    uploaderName = uploaderName,
+                    uploaderUrl = uploaderUrl,
+                    uploaderAvatarUrl = uploaderAvatarUrl
+                )
             }
         }
 
@@ -64,8 +78,8 @@ class BiliBiliPlaylistExtractor(url: String) : Extractor<PlaylistInfo, StreamInf
             name = URLDecoder.decode(url.split("name=")[1].split("&")[0], "UTF-8"),
             serviceId = "BILIBILI",
             thumbnailUrl = thumbnailUrl,
-            uploaderUrl = safeGet{ URLDecoder.decode(url.split("uploaderUrl=")[1].split("&")[0], "UTF-8") },
-            uploaderAvatarUrl = safeGet{URLDecoder.decode(url.split("uploaderAvatar=")[1].split("&")[0], "UTF-8")},
+            uploaderUrl = uploaderUrl,
+            uploaderAvatarUrl = uploaderAvatarUrl,
             uploaderName = uploaderName,
             streamCount = relatedArray.size().toLong()
         ), errors, PagedData(itemList, null)))

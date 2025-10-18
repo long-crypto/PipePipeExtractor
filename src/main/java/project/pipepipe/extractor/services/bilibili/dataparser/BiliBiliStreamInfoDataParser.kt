@@ -62,7 +62,7 @@ object BiliBiliStreamInfoDataParser {
         }
 
         return StreamInfo(
-            url = "${BiliBiliLinks.VIDEO_BASE_URL}$actualId",
+            url = "${BiliBiliLinks.VIDEO_BASE_URL}$actualId?p=1",
             name = item.requireString("title"),
             serviceId = "BILIBILI",
             thumbnailUrl = item.requireString("pic").replace("http", "https"),
@@ -73,6 +73,29 @@ object BiliBiliStreamInfoDataParser {
             uploaderUrl = CHANNEL_BASE_URL + item.requireString("/owner/mid"),
             uploaderAvatarUrl = item.requireObject("owner").requireString("face").replace("http", "https"),
             uploadDate = item.requireLong("pubdate") * 1000,
+            headers = hashMapOf("Referer" to "https://www.bilibili.com")
+        )
+    }
+
+    fun parseFromPartitionRelatedInfoJson(
+        item: JsonNode,
+        bvid: String,
+        thumbnailUrl: String? = null,
+        uploaderName: String? = null,
+        uploaderUrl: String? = null,
+        uploaderAvatarUrl: String? = null
+    ): StreamInfo {
+        return StreamInfo(
+            url = "${BiliBiliLinks.VIDEO_BASE_URL}$bvid?p=${item.requireInt("page")}",
+            name = item.requireString("part"),
+            serviceId = "BILIBILI",
+            thumbnailUrl = thumbnailUrl,
+            streamType = StreamType.VIDEO_STREAM,
+            duration = item.requireLong("duration"),
+            uploaderName = uploaderName,
+            uploaderUrl = uploaderUrl,
+            uploaderAvatarUrl = uploaderAvatarUrl,
+            uploadDate = item.requireLong("ctime") * 1000,
             headers = hashMapOf("Referer" to "https://www.bilibili.com")
         )
     }
