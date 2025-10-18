@@ -115,12 +115,22 @@ object YouTubeStreamInfoDataParser {
                 streamType = StreamType.LIVE_STREAM
             } else {
                 streamType = StreamType.VIDEO_STREAM
-                duration = parseDurationString(data.requireString("/lockupViewModel/contentImage/thumbnailViewModel/overlays/0/thumbnailOverlayBadgeViewModel/thumbnailBadges/0/thumbnailBadgeViewModel/text"))
+                duration = extractDuration(data)
                 uploadDate = TimeAgoParser.parseToTimestamp(data.requireString("/lockupViewModel/metadata/lockupMetadataViewModel/metadata/contentMetadataViewModel/metadataRows/$metadataRowIndex/metadataParts/1/text/content"))
             }
         }
     }
 
+    private fun extractDuration(data: JsonNode): Long? {
+        val paths = listOf(
+            "/lockupViewModel/contentImage/thumbnailViewModel/overlays/0/thumbnailOverlayBadgeViewModel/thumbnailBadges/0/thumbnailBadgeViewModel/text",
+            "/lockupViewModel/contentImage/thumbnailViewModel/overlays/0/thumbnailBottomOverlayViewModel/badges/0/thumbnailBadgeViewModel/text"
+        )
+
+        return paths.firstNotNullOfOrNull { path ->
+            runCatching { parseDurationString(data.requireString(path)) }.getOrNull()
+        }
+    }
 
 
     private fun parseDurationString(input: String): Long {
