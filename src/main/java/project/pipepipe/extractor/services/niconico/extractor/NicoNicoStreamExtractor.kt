@@ -81,7 +81,7 @@ class NicoNicoStreamExtractor(
                         val errorMessage = page.select("p.fail-message").text()
                         return JobStepResult.FailWith(
                             ErrorDetail(
-                                code = "BLOCK_001",
+                                code = "UNAV_001",
                                 stackTrace = IllegalStateException(errorMessage.ifEmpty { "Content not available" }).stackTraceToString()
                             )
                         )
@@ -129,7 +129,7 @@ class NicoNicoStreamExtractor(
                         else -> {
                             return JobStepResult.FailWith(
                                 ErrorDetail(
-                                    code = "BLOCK_001",
+                                    code = "UNAV_001",
                                     stackTrace = IllegalStateException(reasonCode ?: "Content not available").stackTraceToString()
                                 )
                             )

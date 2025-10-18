@@ -73,11 +73,13 @@ object YouTubeStreamInfoDataParser {
             url = STREAM_URL + data.requireString("/playlistVideoRenderer/videoId"),
             serviceId = "YOUTUBE",
             streamType = StreamType.VIDEO_STREAM,
-            duration = parseDurationString(data.requireString("/playlistVideoRenderer/lengthText/simpleText")),
+            duration = runCatching{ parseDurationString(data.requireString("/playlistVideoRenderer/lengthText/simpleText")) }.getOrNull(),
             name = data.requireString("/playlistVideoRenderer/title/runs/0/text"),
-            uploaderName = data.requireString("/playlistVideoRenderer/shortBylineText/runs/0/text"),
+            uploaderName = runCatching { data.requireString("/playlistVideoRenderer/shortBylineText/runs/0/text") }.getOrNull(),
             uploaderUrl = runCatching{ CHANNEL_URL + data.requireString("/playlistVideoRenderer/shortBylineText/runs/0/navigationEndpoint/browseEndpoint/browseId") }.getOrNull(),
-            uploaderAvatarUrl = data.requireArray("/playlistVideoRenderer/thumbnail/thumbnails").last().requireString("url"),
+            uploaderAvatarUrl = runCatching{
+                data.requireArray("/playlistVideoRenderer/thumbnail/thumbnails").last().requireString("url")
+            }.getOrNull(),
             thumbnailUrl = data.requireArray("/playlistVideoRenderer/thumbnail/thumbnails").last().requireString("url"),
             isPaid = runCatching{ data.requireString("/playlistVideoRenderer/badges/0/metadataBadgeRenderer/style") == "BADGE_STYLE_TYPE_MEMBERS_ONLY" }.getOrDefault(false),
         )
@@ -85,11 +87,25 @@ object YouTubeStreamInfoDataParser {
 
     fun parseFromLockupViewModel(data: JsonNode, overrideChannelName: String? = null, overrideChannelId: String? = null): StreamInfo {
         val useOverride = overrideChannelName != null && overrideChannelId != null
-        val metadataRowIndex = if (useOverride) 0 else 1
+        val metadataRows = data.requireArray("/lockupViewModel/metadata/lockupMetadataViewModel/metadata/contentMetadataViewModel/metadataRows")
+        val hasMultipleRows = metadataRows.size() > 1 // member-only?
+        val metadataRowIndex = if (useOverride && hasMultipleRows) 1 else if (useOverride) 0 else 1
 
-        val isLive = runCatching {
-            data.requireString("/lockupViewModel/metadata/lockupMetadataViewModel/metadata/contentMetadataViewModel/metadataRows/$metadataRowIndex/metadataParts/0/text/content").contains("watching")
-        }.getOrDefault(false)
+        val isLive = if (useOverride && !hasMultipleRows) {
+            false
+        } else {
+            runCatching {
+                data.requireString("/lockupViewModel/metadata/lockupMetadataViewModel/metadata/contentMetadataViewModel/metadataRows/$metadataRowIndex/metadataParts/0/text/content").contains("watching")
+            }.getOrDefault(false)
+        }
+
+        val viewCount = if (useOverride && !hasMultipleRows) {
+            null
+        } else {
+            runCatching {
+                data.requireString("/lockupViewModel/metadata/lockupMetadataViewModel/metadata/contentMetadataViewModel/metadataRows/$metadataRowIndex/metadataParts/0/text/content").extractDigitsAsLong()
+            }.getOrNull()
+        }
 
         return StreamInfo(
             url = STREAM_URL + data.requireString("/lockupViewModel/contentId"),
@@ -107,16 +123,20 @@ object YouTubeStreamInfoDataParser {
                 data.requireArray("/lockupViewModel/metadata/lockupMetadataViewModel/image/decoratedAvatarViewModel/avatar/avatarViewModel/image/sources").last().requireString("url")
             },
             thumbnailUrl = data.requireArray("/lockupViewModel/contentImage/thumbnailViewModel/image/sources").last().requireString("url"),
-            viewCount = runCatching {
-                data.requireString("/lockupViewModel/metadata/lockupMetadataViewModel/metadata/contentMetadataViewModel/metadataRows/$metadataRowIndex/metadataParts/0/text/content").extractDigitsAsLong()
-            }.getOrNull()
+            viewCount = viewCount
         ).apply {
             if (isLive) {
                 streamType = StreamType.LIVE_STREAM
             } else {
                 streamType = StreamType.VIDEO_STREAM
                 duration = extractDuration(data)
-                uploadDate = TimeAgoParser.parseToTimestamp(data.requireString("/lockupViewModel/metadata/lockupMetadataViewModel/metadata/contentMetadataViewModel/metadataRows/$metadataRowIndex/metadataParts/1/text/content"))
+
+                // 当 override 为 true 且只有一行时，uploadDate 使用 metadataParts/0
+                uploadDate = if (useOverride && !hasMultipleRows) {
+                    TimeAgoParser.parseToTimestamp(data.requireString("/lockupViewModel/metadata/lockupMetadataViewModel/metadata/contentMetadataViewModel/metadataRows/0/metadataParts/0/text/content"))
+                } else {
+                    TimeAgoParser.parseToTimestamp(data.requireString("/lockupViewModel/metadata/lockupMetadataViewModel/metadata/contentMetadataViewModel/metadataRows/$metadataRowIndex/metadataParts/1/text/content"))
+                }
             }
         }
     }

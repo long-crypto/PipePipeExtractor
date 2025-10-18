@@ -152,7 +152,7 @@ class YouTubeStreamExtractor(
                                 } else {
                                     return JobStepResult.FailWith(
                                         ErrorDetail(
-                                            code = "BLOCK_001",
+                                            code = "UNAV_001",
                                             stackTrace = IllegalStateException(detailedErrorMessage ?: reason).stackTraceToString()
                                         )
                                     )
@@ -191,7 +191,7 @@ class YouTubeStreamExtractor(
                     reason != null -> {
                         return JobStepResult.FailWith(
                             ErrorDetail(
-                                code = "BLOCK_001",
+                                code = "UNAV_001",
                                 stackTrace = IllegalStateException("Got error: \"$reason\"").stackTraceToString()
                             )
                         )
