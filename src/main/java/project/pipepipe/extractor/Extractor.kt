@@ -1,12 +1,15 @@
 package project.pipepipe.extractor
 
 import project.pipepipe.shared.infoitem.Info
+import project.pipepipe.shared.infoitem.StreamInfo
 import project.pipepipe.shared.job.ExtractResult
 import project.pipepipe.shared.job.JobStepResult
 import project.pipepipe.shared.job.TaskResult
 import project.pipepipe.shared.state.State
 
 const val FAILED_COMMIT_THRESHOLD = 5
+
+class IgnoreException: Exception()
 
 abstract class Extractor<META: Info, DATA: Info>(
     val url: String
@@ -61,6 +64,7 @@ abstract class Extractor<META: Info, DATA: Info>(
             val item = itemProvider()
             itemList.add(item)
         } catch (e: Exception) {
+            if (e is IgnoreException) return
             failedCommitCount ++
             _errors.add(e)
             e.printStackTrace()

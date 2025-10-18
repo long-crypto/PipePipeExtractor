@@ -125,4 +125,12 @@ object YouTubeRequestHelper {
         )
         return objectMapper.writeValueAsString(bodyMap)
     }
+
+    fun getTrendingInfoBody(browseId: String = "FEtrending"): String {
+        val bodyMap = mapOf(
+            "context" to DESKTOP_CONTEXT,
+            "browseId" to browseId
+        )
+        return objectMapper.writeValueAsString(bodyMap)
+    }
 }

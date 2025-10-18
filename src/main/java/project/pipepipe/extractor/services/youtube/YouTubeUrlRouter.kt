@@ -6,6 +6,7 @@ import project.pipepipe.extractor.services.youtube.YouTubeLinks.PLAYLIST_BASE_UR
 import project.pipepipe.extractor.services.youtube.YouTubeLinks.REPLY_RAW_URL
 import project.pipepipe.extractor.services.youtube.YouTubeLinks.SEARCH_RAW_URL
 import project.pipepipe.extractor.services.youtube.YouTubeLinks.TAB_RAW_URL
+import project.pipepipe.extractor.services.youtube.YouTubeLinks.TRENDING_RAW_URL
 import project.pipepipe.extractor.services.youtube.YouTubeUrlParser.parseStreamId
 import project.pipepipe.extractor.services.youtube.dataparser.YouTubeChannelIdParser.parseChannelId
 import project.pipepipe.extractor.services.youtube.extractor.YouTubeChannelLiveTabExtractor
@@ -15,11 +16,13 @@ import project.pipepipe.extractor.services.youtube.extractor.YouTubeCommentExtra
 import project.pipepipe.extractor.services.youtube.extractor.YouTubePlaylistExtractor
 import project.pipepipe.extractor.services.youtube.extractor.YouTubeSearchExtractor
 import project.pipepipe.extractor.services.youtube.extractor.YouTubeStreamExtractor
+import project.pipepipe.extractor.services.youtube.extractor.YouTubeTrendingExtractor
 import project.pipepipe.extractor.utils.RequestHelper.getQueryValue
 
 object YouTubeUrlRouter {
     fun route(url: String): Extractor<*,*>? {
         return when {
+            url.contains(TRENDING_RAW_URL) -> YouTubeTrendingExtractor(url)
             url.contains(PLAYLIST_BASE_URL) -> YouTubePlaylistExtractor(url)
             url.contains(SEARCH_RAW_URL) -> YouTubeSearchExtractor(url)
             url.contains(TAB_RAW_URL) -> when {

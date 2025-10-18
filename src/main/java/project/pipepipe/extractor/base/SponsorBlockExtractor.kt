@@ -147,7 +147,7 @@ class SponsorBlockExtractor(url: String) : Extractor<Info, SponsorBlockSegmentIn
     }
 
     fun encodeUrlUtf8(string: String?): String? {
-        return URLEncoder.encode(string, StandardCharsets.UTF_8)
+        return URLEncoder.encode(string, "UTF-8")
     }
 
     fun toSha256(videoId: String): String {

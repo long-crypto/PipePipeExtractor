@@ -3,9 +3,11 @@ package project.pipepipe.extractor.services.youtube
 import project.pipepipe.extractor.Extractor
 import project.pipepipe.extractor.StreamingService
 import project.pipepipe.extractor.base.CookieExtractor
+import project.pipepipe.extractor.services.youtube.YouTubeLinks.TRENDING_RAW_URL
 import project.pipepipe.extractor.services.youtube.YouTubeLinks.GET_SUGGESTION_URL
 import project.pipepipe.extractor.services.youtube.YouTubeLinks.SEARCH_RAW_URL
 import project.pipepipe.shared.infoitem.SupportedServiceInfo
+import project.pipepipe.shared.infoitem.TrendingInfo
 import project.pipepipe.shared.infoitem.helper.SearchFilterGroup
 import project.pipepipe.shared.infoitem.helper.SearchFilterItem
 import project.pipepipe.shared.infoitem.helper.SearchType
@@ -91,6 +93,10 @@ class YouTubeService(id: String) : StreamingService(id)  {
                 SearchType("channel", "$SEARCH_RAW_URL?type=channel&query=", listOf(sortByFilterGroup)),
                 SearchType("playlist", "$SEARCH_RAW_URL?type=playlist&query=", listOf(sortByFilterGroup)),
                 SearchType("movie", "$SEARCH_RAW_URL?type=movie&query=", sortFilters),
+            ),
+            trendingList = listOf(
+                TrendingInfo("$TRENDING_RAW_URL?name=trending", "YOUTUBE", "trending"),
+                TrendingInfo("$TRENDING_RAW_URL?name=recommended_lives", "YOUTUBE", "recommended_lives"),
             ),
             themeColor = "#e53935"
         )

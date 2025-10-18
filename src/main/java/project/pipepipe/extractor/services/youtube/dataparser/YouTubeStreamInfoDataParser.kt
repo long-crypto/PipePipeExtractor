@@ -1,6 +1,7 @@
 package project.pipepipe.extractor.services.youtube.dataparser
 
 import com.fasterxml.jackson.databind.JsonNode
+import project.pipepipe.extractor.IgnoreException
 import project.pipepipe.extractor.services.youtube.YouTubeLinks.CHANNEL_URL
 import project.pipepipe.extractor.services.youtube.YouTubeLinks.STREAM_URL
 import project.pipepipe.extractor.utils.TimeAgoParser
@@ -9,16 +10,20 @@ import project.pipepipe.shared.utils.json.requireArray
 import project.pipepipe.shared.utils.json.requireString
 import project.pipepipe.shared.infoitem.StreamInfo
 import project.pipepipe.shared.infoitem.StreamType
+import project.pipepipe.shared.utils.json.requireObject
 
 object YouTubeStreamInfoDataParser {
     fun parseFromVideoRenderer(data: JsonNode, overrideChannelName: String? = null, overrideChannelId: String? = null): StreamInfo {
         if (!data.has("videoRenderer")) {
             return parseFromLockupViewModel(data, overrideChannelName,  overrideChannelName)
         }
+        if (data.requireObject("videoRenderer").has("upcomingEventData")) throw IgnoreException()
         val isLive = when {
             runCatching { data.requireString("/videoRenderer/badges/0/metadataBadgeRenderer/style") }.getOrNull() == "BADGE_STYLE_TYPE_LIVE_NOW" -> true
             runCatching{ data.requireString("/videoRenderer/badges/0/metadataBadgeRenderer/label") }.getOrNull()?.startsWith("LIVE") == true -> true
-            else -> false
+            else -> runCatching {
+                data.requireObject("/videoRenderer/viewCountText").toString().contains(" watching")
+            }.getOrDefault(false)
         }
 
         return StreamInfo(

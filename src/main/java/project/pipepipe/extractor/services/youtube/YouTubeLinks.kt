@@ -8,6 +8,7 @@ object YouTubeLinks {
     const val NEXT_URL = "https://www.youtube.com/youtubei/v1/next?prettyPrint=false"
     const val SEARCH_RAW_URL = "search://youtube.raw"
     const val TAB_RAW_URL = "tab://youtube.raw"
+    const val TRENDING_RAW_URL = "trending://youtube.raw"
     const val COMMENT_RAW_URL = "comment://youtube.raw"
     const val REPLY_RAW_URL = "reply://youtube.raw"
     const val SEARCH_URL = "https://www.youtube.com/youtubei/v1/search?prettyPrint=false"
