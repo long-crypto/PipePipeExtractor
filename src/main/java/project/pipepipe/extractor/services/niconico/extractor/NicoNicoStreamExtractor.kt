@@ -209,7 +209,7 @@ class NicoNicoStreamExtractor(
                     getAccessUrl(id!!, watchData.requireString("/data/response/client/watchTrackId")),
                     getAccessHeaders(watchData.requireString("/data/response/media/domand/accessRightKey")),
                     body
-                ))), state = StreamExtractState(1, streamInfo))
+                ))), state = StreamExtractState(2, streamInfo))
         } else {
             val streamInfo = (currentState as StreamExtractState).streamInfo
             val response = clientResults!!.first { it.taskId.isDefaultTask()}
