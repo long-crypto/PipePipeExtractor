@@ -2,7 +2,7 @@ package project.pipepipe.extractor.services.youtube.dataparser
 
 import com.fasterxml.jackson.databind.JsonNode
 import project.pipepipe.extractor.services.youtube.YouTubeLinks.CHANNEL_URL
-import project.pipepipe.extractor.utils.UtilsOld.mixedNumberWordToLong
+import project.pipepipe.extractor.utils.mixedNumberWordToLong
 import project.pipepipe.shared.infoitem.ChannelInfo
 import project.pipepipe.shared.utils.json.requireArray
 import project.pipepipe.shared.utils.json.requireString

@@ -2,6 +2,7 @@ package project.pipepipe.extractor.services.bilibili.extractor
 
 import com.fasterxml.jackson.databind.JsonNode
 import project.pipepipe.extractor.Extractor
+import project.pipepipe.extractor.ExtractorContext.asJson
 import project.pipepipe.extractor.Router.setType
 import project.pipepipe.extractor.services.bilibili.BiliBiliLinks
 import project.pipepipe.extractor.services.bilibili.BiliBiliLinks.DANMAKU_RAW_URL
@@ -9,9 +10,7 @@ import project.pipepipe.extractor.services.bilibili.BiliBiliLinks.VIDEO_BASE_URL
 import project.pipepipe.extractor.services.bilibili.BiliBiliUrlParser
 import project.pipepipe.extractor.services.bilibili.BilibiliService
 import project.pipepipe.extractor.services.bilibili.Utils
-import project.pipepipe.shared.state.State
-import project.pipepipe.shared.state.StreamExtractState
-import project.pipepipe.extractor.utils.UtilsOld
+import project.pipepipe.extractor.utils.RequestHelper.getQueryValue
 import project.pipepipe.extractor.utils.createMultiStreamDashManifest
 import project.pipepipe.shared.infoitem.StaffInfo
 import project.pipepipe.shared.infoitem.StreamInfo
@@ -19,20 +18,10 @@ import project.pipepipe.shared.infoitem.helper.stream.AudioStream
 import project.pipepipe.shared.infoitem.helper.stream.Description
 import project.pipepipe.shared.infoitem.helper.stream.Frameset
 import project.pipepipe.shared.infoitem.helper.stream.VideoStream
-import project.pipepipe.shared.job.ClientTask
-import project.pipepipe.shared.job.ExtractResult
-import project.pipepipe.shared.job.JobStepResult
-import project.pipepipe.shared.job.Payload
-import project.pipepipe.shared.job.RequestMethod
-import project.pipepipe.shared.job.TaskResult
-import project.pipepipe.extractor.ExtractorContext.asJson
-import project.pipepipe.shared.job.ErrorDetail
-import project.pipepipe.shared.utils.json.requireArray
-import project.pipepipe.shared.utils.json.requireInt
-import project.pipepipe.shared.utils.json.requireLong
-import project.pipepipe.shared.utils.json.requireObject
-import project.pipepipe.shared.utils.json.requireString
-import kotlin.collections.map
+import project.pipepipe.shared.job.*
+import project.pipepipe.shared.state.State
+import project.pipepipe.shared.state.StreamExtractState
+import project.pipepipe.shared.utils.json.*
 
 class BiliBiliStreamExtractor(
     url: String,
@@ -85,8 +74,8 @@ class BiliBiliStreamExtractor(
         val watchData = clientResults.first { it.taskId == "info" }.result!!.asJson().requireObject("data")
         val tagData = clientResults.first { it.taskId == "tags" }.result!!.asJson().requireArray("data")
         val videoshotData = clientResults.firstOrNull { it.taskId == "videoshot" }?.result?.asJson()
-        val pageNumString = UtilsOld.getQueryValue(
-            UtilsOld.stringToURL(url),
+        val pageNumString = getQueryValue(
+            url,
             "p"
         )
         val pageNum = pageNumString?.toIntOrNull() ?: 1

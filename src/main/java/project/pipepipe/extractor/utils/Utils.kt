@@ -3,8 +3,7 @@ package project.pipepipe.extractor.utils
 import project.pipepipe.shared.infoitem.helper.stream.AudioStream
 import project.pipepipe.shared.infoitem.helper.stream.SubtitleStream
 import project.pipepipe.shared.infoitem.helper.stream.VideoStream
-import java.util.Random
-import kotlin.Pair
+import java.util.*
 
 fun generateRandomString(
     length: Int,
@@ -155,4 +154,36 @@ fun getDurationFromString(duration: String): Long {
     }
 
     return result
+}
+
+/**
+ * Convert a mixed number word to a long.
+ *
+ *
+ *
+ * Examples:
+ *
+ *
+ *
+ *  * 123 -&gt; 123
+ *  * 1.23K -&gt; 1230
+ *  * 1.23M -&gt; 1230000
+ *
+ *
+ * @param numberWord string to be converted to a long
+ * @return a long
+ */
+fun mixedNumberWordToLong(numberWord: String?): Long {
+    var multiplier = ""
+    try {
+        multiplier = Parser.matchGroup("[\\d]+([\\.,][\\d]+)?([KMBkmb])+", numberWord, 2)
+    } catch (ignored: Exception) {
+    }
+    val count = Parser.matchGroup1("([\\d]+([\\.,][\\d]+)?)", numberWord).replace(",", ".").toDouble()
+    when (multiplier.uppercase(Locale.getDefault())) {
+        "K" -> return (count * 1e3).toLong()
+        "M" -> return (count * 1e6).toLong()
+        "B" -> return (count * 1e9).toLong()
+        else -> return (count).toLong()
+    }
 }

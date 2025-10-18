@@ -3,8 +3,8 @@ package project.pipepipe.extractor.baseextractor
 import com.fasterxml.jackson.databind.JsonNode
 import kotlinx.serialization.json.Json
 import project.pipepipe.extractor.Extractor
+import project.pipepipe.extractor.ExtractorContext.asJson
 import project.pipepipe.extractor.utils.RandomStringFromAlphabetGenerator
-import project.pipepipe.extractor.utils.UtilsOld
 import project.pipepipe.extractor.utils.RequestHelper.getQueryValue
 import project.pipepipe.shared.infoitem.Info
 import project.pipepipe.shared.infoitem.SponsorBlockSegmentInfo
@@ -13,10 +13,12 @@ import project.pipepipe.shared.job.*
 import project.pipepipe.shared.state.PlainState
 import project.pipepipe.shared.state.PreFetchPayloadState
 import project.pipepipe.shared.state.State
-import project.pipepipe.extractor.ExtractorContext.asJson
 import project.pipepipe.shared.utils.json.requireArray
 import project.pipepipe.shared.utils.json.requireDouble
 import project.pipepipe.shared.utils.json.requireString
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
 import java.security.SecureRandom
 
 class SponsorBlockExtractor(url: String) : Extractor<Info, SponsorBlockSegmentInfo>(url) {
@@ -36,13 +38,13 @@ class SponsorBlockExtractor(url: String) : Extractor<Info, SponsorBlockSegmentIn
             url.contains(BILIBILI_SPONSORBLOCK_RAW_URL) -> BILIBILI_SPONSORBLOCK_API_URL
             else -> throw IllegalArgumentException()
         }
-        val videoId = getQueryValue(url, "id")
+        val videoId = getQueryValue(url, "id")!!
         if (currentState == null) {
-            val categoryParams = UtilsOld.encodeUrlUtf8(
+            val categoryParams = encodeUrlUtf8(
                 "[\"sponsor\",\"intro\",\"outro\",\"interaction\",\"highlight\",\"selfpromo\",\"music_offtopic\",\"preview\",\"filler\"]"
             )
-            val actionParams = UtilsOld.encodeUrlUtf8("[\"skip\",\"poi\"]")
-            val videoIdHash = UtilsOld.toSha256(videoId)
+            val actionParams = encodeUrlUtf8("[\"skip\",\"poi\"]")
+            val videoIdHash = toSha256(videoId)
 
             val queryUrl = "${apiUrl}skipSegments/${videoIdHash.take(4)}" +
                     "?categories=$categoryParams&actionTypes=$actionParams&userAgent=Mozilla/5.0"
@@ -142,5 +144,27 @@ class SponsorBlockExtractor(url: String) : Extractor<Info, SponsorBlockSegmentIn
             itemObject.requireString("UUID"), startTime, endTime,
             SponsorBlockCategory.fromApiName(itemObject.requireString("category")),
         )
+    }
+
+    fun encodeUrlUtf8(string: String?): String? {
+        return URLEncoder.encode(string, StandardCharsets.UTF_8)
+    }
+
+    fun toSha256(videoId: String): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+        val bytes = digest.digest(videoId.toByteArray(StandardCharsets.UTF_8))
+        val sb = StringBuilder()
+
+        for (b in bytes) {
+            val hex = Integer.toHexString(0xff and b.toInt())
+
+            if (hex.length == 1) {
+                sb.append('0')
+            }
+
+            sb.append(hex)
+        }
+
+        return sb.toString()
     }
 }

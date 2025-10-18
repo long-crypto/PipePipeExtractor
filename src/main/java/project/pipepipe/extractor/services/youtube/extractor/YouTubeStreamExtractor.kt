@@ -16,7 +16,6 @@ import project.pipepipe.extractor.services.youtube.YouTubeRequestHelper.getVideo
 import project.pipepipe.extractor.services.youtube.YouTubeUrlParser
 import project.pipepipe.extractor.services.youtube.dataparser.YouTubeStreamInfoDataParser.parseFromLockupViewModel
 import project.pipepipe.shared.state.State
-import project.pipepipe.extractor.utils.UtilsOld.mixedNumberWordToLong
 import project.pipepipe.extractor.utils.createMultiStreamDashManifest
 import project.pipepipe.extractor.utils.parseMediaType
 import project.pipepipe.shared.infoitem.CommentInfo
@@ -33,6 +32,7 @@ import project.pipepipe.shared.job.*
 import project.pipepipe.shared.state.CachedExtractState
 import project.pipepipe.shared.state.PlainState
 import project.pipepipe.extractor.ExtractorContext.asJson
+import project.pipepipe.extractor.utils.mixedNumberWordToLong
 import project.pipepipe.shared.utils.json.requireArray
 import project.pipepipe.shared.utils.json.requireInt
 import project.pipepipe.shared.utils.json.requireLong

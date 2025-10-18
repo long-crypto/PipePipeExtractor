@@ -5,9 +5,9 @@ import project.pipepipe.extractor.services.bilibili.BiliBiliLinks.GET_SUGGESTION
 import project.pipepipe.extractor.services.bilibili.BiliBiliLinks.SEARCH_BASE_URL
 import project.pipepipe.extractor.services.bilibili.BiliBiliLinks.TRENDING_RAW_URL
 import project.pipepipe.extractor.services.bilibili.extractor.BiliBiliCookieExtractor
-import project.pipepipe.extractor.utils.UtilsOld
-import project.pipepipe.shared.infoitem.TrendingInfo
+import project.pipepipe.extractor.utils.RequestHelper.stringToURI
 import project.pipepipe.shared.infoitem.SupportedServiceInfo
+import project.pipepipe.shared.infoitem.TrendingInfo
 import project.pipepipe.shared.infoitem.helper.SearchFilterGroup
 import project.pipepipe.shared.infoitem.helper.SearchFilterItem
 import project.pipepipe.shared.infoitem.helper.SearchType
@@ -33,7 +33,7 @@ class BilibiliService(id: String) : StreamingService(id) {
             val headers = linkedMapOf<String, String>()
             headers["User-Agent"] = DeviceForger.requireRandomDevice().userAgent
             if (originalUrl != null) {
-                var referer = "https://${UtilsOld.stringToURL(originalUrl).host}/"
+                var referer = "https://${stringToURI(originalUrl)!!.host}/"
                 if (referer !in listOf(
                         BiliBiliLinks.WWW_REFERER,
                         BiliBiliLinks.SPACE_REFERER,
