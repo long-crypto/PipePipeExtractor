@@ -53,6 +53,6 @@ object ExtractorContext {
         val NicoNico = NicoNicoService("NICONICO")
 //        val NicoNico = (6)
 
-        val all = listOf(BiliBili, YouTube, NicoNico)
+        val all = listOf(YouTube,BiliBili, NicoNico)
     }
 }

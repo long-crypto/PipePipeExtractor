@@ -5,6 +5,7 @@ import project.pipepipe.extractor.services.niconico.NicoNicoLinks.PLAYLIST_SEARC
 import project.pipepipe.extractor.services.niconico.NicoNicoLinks.RELATED_VIDEO_URL
 import project.pipepipe.extractor.services.niconico.NicoNicoLinks.SEARCH_URL
 import project.pipepipe.extractor.services.niconico.NicoNicoLinks.TAB_RAW_URL
+import project.pipepipe.extractor.services.niconico.NicoNicoLinks.TRENDING_RAW_URL
 import project.pipepipe.extractor.services.niconico.NicoNicoLinks.TRENDING_URL
 import project.pipepipe.extractor.services.niconico.NicoNicoLinks.USER_URL
 import project.pipepipe.extractor.services.niconico.NicoNicoUrlParser.parseStreamId
@@ -38,7 +39,7 @@ object NicoNicoUrlRouter {
             url.contains("/series/") -> NicoNicoSeriesExtractor(url)
             url.contains(USER_URL) -> NicoNicoChannelMainTabExtractor(url)
             url.contains(RELATED_VIDEO_URL) -> NicoNicoRelatedVideoExtractor(url)
-            url == TRENDING_URL -> NicoNicoTrendingExtractor(url)
+            url.contains(TRENDING_RAW_URL) -> NicoNicoTrendingExtractor(url)
             else -> null
         }
     }

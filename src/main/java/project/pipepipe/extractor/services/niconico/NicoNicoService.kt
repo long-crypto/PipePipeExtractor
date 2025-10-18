@@ -7,7 +7,9 @@ import project.pipepipe.extractor.base.CookieExtractor
 import project.pipepipe.extractor.services.niconico.NicoNicoLinks.PLAYLIST_SEARCH_API_URL
 import project.pipepipe.extractor.services.niconico.NicoNicoLinks.SEARCH_URL
 import project.pipepipe.extractor.services.niconico.NicoNicoLinks.SUGGESTION_URL
+import project.pipepipe.extractor.services.niconico.NicoNicoLinks.TRENDING_RAW_URL
 import project.pipepipe.shared.infoitem.SupportedServiceInfo
+import project.pipepipe.shared.infoitem.TrendingInfo
 import project.pipepipe.shared.infoitem.helper.SearchFilterGroup
 import project.pipepipe.shared.infoitem.helper.SearchFilterItem
 import project.pipepipe.shared.infoitem.helper.SearchType
@@ -91,6 +93,9 @@ class NicoNicoService(id: String): StreamingService(id)  {
                 SearchType("video", SEARCH_URL, sortFilters),
                 SearchType("playlist", "$PLAYLIST_SEARCH_API_URL&keyword=", playListSortFilters),
             ),
-            themeColor = "#9e9e9e"
+            themeColor = "#9e9e9e",
+            trendingList = listOf(
+                TrendingInfo("$TRENDING_RAW_URL?name=trending", "NICONICO", "trending")
+            )
         )
 }

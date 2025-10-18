@@ -4,6 +4,7 @@ import org.jsoup.Jsoup
 import org.jsoup.parser.Parser
 import project.pipepipe.extractor.Extractor
 import project.pipepipe.extractor.ExtractorContext.asJson
+import project.pipepipe.extractor.services.niconico.NicoNicoLinks.TRENDING_URL
 import project.pipepipe.extractor.services.niconico.NicoNicoService.Companion.GOOGLE_HEADER
 import project.pipepipe.extractor.services.niconico.dataparser.NicoNicoStreamInfoDataParser
 import project.pipepipe.shared.infoitem.StreamInfo
@@ -26,7 +27,7 @@ class NicoNicoTrendingExtractor(url: String) : Extractor<Nothing, StreamInfo>(ur
                     ClientTask(
                         payload = Payload(
                             RequestMethod.GET,
-                            url,
+                            TRENDING_URL,
                             GOOGLE_HEADER
                         )
                     ),

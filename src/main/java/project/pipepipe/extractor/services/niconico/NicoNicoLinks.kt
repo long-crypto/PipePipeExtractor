@@ -3,6 +3,7 @@ package project.pipepipe.extractor.services.niconico
 object NicoNicoLinks {
     const val WATCH_URL = "https://www.nicovideo.jp/watch/"
     const val TRENDING_URL = "https://www.nicovideo.jp/ranking/genre"
+    const val TRENDING_RAW_URL = "trending://niconico.raw"
     const val MYLIST_URL = "https://nvapi.nicovideo.jp/v2/mylists/"
     const val USER_URL = "https://www.nicovideo.jp/user/"
     const val CHANNEL_URL = "https://ch.nicovideo.jp/"
