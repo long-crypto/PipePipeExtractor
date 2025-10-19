@@ -107,11 +107,11 @@ object BiliBiliStreamInfoDataParser {
     ): StreamInfo {
         return StreamInfo(
             url = "${BiliBiliLinks.VIDEO_BASE_URL}$id?p=$p",
-            name = item.requireString("part"),
+            name = "P$p ${item.requireString("part")}",
             serviceId = "BILIBILI",
             streamType = StreamType.VIDEO_STREAM,
             duration = item.requireLong("duration"),
-            viewCount = -1,
+            viewCount = null,
             uploadDate = item.requireLong("ctime") * 1000,
             headers = hashMapOf("Referer" to "https://www.bilibili.com")
         )
