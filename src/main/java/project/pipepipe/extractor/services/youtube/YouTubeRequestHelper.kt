@@ -32,7 +32,7 @@ object YouTubeRequestHelper {
             "gl" to "US",
             "clientName" to "WEB",
             "originalUrl" to "https://www.youtube.com",
-            "clientVersion" to "2.20250925.01.00",
+            "clientVersion" to "2.20251017.01.00",
             "platform" to "DESKTOP"
         ),
         "user" to mapOf(
