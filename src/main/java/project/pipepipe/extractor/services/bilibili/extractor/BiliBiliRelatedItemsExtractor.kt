@@ -56,7 +56,7 @@ class BiliBiliRelatedItemsExtractor(
             partitionData.forEachIndexed {i, e ->
                 commitPartition { (BiliBiliStreamInfoDataParser.parseFromPartitionInfoJson(e, bvid, i + 1)) }
             }
-            return JobStepResult.CompleteWith(ExtractResult(RelatedItemInfo(url.setType("related"), partitionList), errors, PagedData(itemList, null)))
+            return JobStepResult.CompleteWith(ExtractResult(RelatedItemInfo(url.setType("related"), if (partitionList.size == 1)null else partitionList), errors, PagedData(itemList, null)))
         }
     }
 }
