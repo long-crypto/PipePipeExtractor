@@ -218,7 +218,7 @@ class BiliBiliStreamExtractor(
         streamInfo.viewCount = stat.requireLong("view")
         streamInfo.likeCount = stat.requireLong("like")
         streamInfo.description = Description(watch.requireString("desc"), Description.Companion.PLAIN_TEXT)
-        streamInfo.uploadDate = watch.requireLong("pubdate")
+        streamInfo.uploadDate = watch.requireLong("pubdate") * 1000
 
         val staffArray = watch.get("staff")
         streamInfo.staffs = if (staffArray != null && staffArray.isArray && staffArray.size() > 0) {
