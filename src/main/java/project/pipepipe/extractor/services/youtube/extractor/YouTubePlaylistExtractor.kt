@@ -23,6 +23,7 @@ import project.pipepipe.shared.state.PlainState
 import project.pipepipe.shared.state.State
 import project.pipepipe.extractor.ExtractorContext.asJson
 import project.pipepipe.extractor.Router.setType
+import project.pipepipe.extractor.services.youtube.YouTubeLinks.CHANNEL_URL
 import project.pipepipe.shared.utils.json.requireArray
 import project.pipepipe.shared.utils.json.requireString
 
@@ -51,25 +52,43 @@ class YouTubePlaylistExtractor(
         } else {
             val result = clientResults!!.first { it.taskId.isDefaultTask() }.result!!.asJson()
             var nextPageUrl: String? = null
-            result.requireArray("/contents/twoColumnBrowseResultsRenderer/tabs/0/tabRenderer/content/sectionListRenderer/contents/0/itemSectionRenderer/contents/0/playlistVideoListRenderer/contents").forEach {
-                if (it.has("playlistVideoRenderer")) {
-                    commit { parseFromPlaylistVideoRenderer(it) }
-                } else {
-                    nextPageUrl = "$url&continuation=${it.requireString("/continuationItemRenderer/continuationEndpoint/commandExecutorCommand/commands/1/continuationCommand/token")}"
+            result.requireArray("/contents/twoColumnBrowseResultsRenderer/tabs/0/tabRenderer/content/sectionListRenderer/contents/0/itemSectionRenderer/contents/0/playlistVideoListRenderer/contents")
+                .forEach {
+                    if (it.has("playlistVideoRenderer")) {
+                        commit { parseFromPlaylistVideoRenderer(it) }
+                    } else {
+                        nextPageUrl =
+                            "$url&continuation=${it.requireString("/continuationItemRenderer/continuationEndpoint/commandExecutorCommand/commands/1/continuationCommand/token")}"
+                    }
                 }
-            }
 
-            return JobStepResult.CompleteWith(ExtractResult(
-                info = PlaylistInfo(
-                    serviceId = "YOUTUBE",
-                    url =  result.requireString("/microformat/microformatDataRenderer/urlCanonical").setType("https"),
-                    name = result.requireString("/microformat/microformatDataRenderer/title"),
-                    thumbnailUrl = result.requireString("/microformat/microformatDataRenderer/thumbnail/thumbnails/0/url"),
-                    streamCount = result.requireString("/sidebar/playlistSidebarRenderer/items/0/playlistSidebarPrimaryInfoRenderer/stats/0/runs/0/text").extractDigitsAsLong(),
-                ),
-                errors = errors,
-                pagedData = PagedData(itemList, nextPageUrl)
-            ))
+            println(789)
+            println(result.requireString("/microformat/microformatDataRenderer/urlCanonical")
+                .setType("https"))
+            return JobStepResult.CompleteWith(
+                ExtractResult(
+                    info = PlaylistInfo(
+                        serviceId = "YOUTUBE",
+                        url = result.requireString("/microformat/microformatDataRenderer/urlCanonical")
+                            .setType("https"),
+                        name = result.requireString("/microformat/microformatDataRenderer/title"),
+                        thumbnailUrl = result.requireString("/microformat/microformatDataRenderer/thumbnail/thumbnails/0/url"),
+                        streamCount = result.requireString("/sidebar/playlistSidebarRenderer/items/0/playlistSidebarPrimaryInfoRenderer/stats/0/runs/0/text")
+                            .extractDigitsAsLong(),
+                        uploaderName = listOf(
+                            "/header/playlistHeaderRenderer/ownerText/runs/0/text",
+                            "/sidebar/playlistSidebarRenderer/items/1/playlistSidebarSecondaryInfoRenderer/videoOwner/videoOwnerRenderer/title/runs/0/text"
+                        ).firstNotNullOfOrNull { path -> runCatching { result.requireString(path) }.getOrNull() },
+                        uploaderUrl = listOf(
+                            "/header/playlistHeaderRenderer/ownerText/runs/0/navigationEndpoint/browseEndpoint/browseId",
+                            "/sidebar/playlistSidebarRenderer/items/1/playlistSidebarSecondaryInfoRenderer/videoOwner/videoOwnerRenderer/title/runs/0/navigationEndpoint/browseEndpoint/browseId"
+                        ).firstNotNullOfOrNull { path -> runCatching { result.requireString(path) }.getOrNull() }
+                            ?.let { CHANNEL_URL + it },
+                    ),
+                    errors = errors,
+                    pagedData = PagedData(itemList, nextPageUrl)
+                )
+            )
         }
     }
 
@@ -96,14 +115,21 @@ class YouTubePlaylistExtractor(
         } else {
             val result = clientResults!!.first { it.taskId.isDefaultTask() }.result!!.asJson()
             var nextUrl: String? = null
-            result.requireArray("/onResponseReceivedActions/0/appendContinuationItemsAction/continuationItems").forEach {
-                if (it.has("playlistVideoRenderer")) {
-                    commit { parseFromPlaylistVideoRenderer(it) }
-                } else { //continuation
-                    nextUrl = "${replaceQueryValue(url, "continuation",it.requireString("/continuationItemRenderer/continuationEndpoint/continuationCommand/token"))}"
-                }
+            result.requireArray("/onResponseReceivedActions/0/appendContinuationItemsAction/continuationItems")
+                .forEach {
+                    if (it.has("playlistVideoRenderer")) {
+                        commit { parseFromPlaylistVideoRenderer(it) }
+                    } else { //continuation
+                        nextUrl = "${
+                            replaceQueryValue(
+                                url,
+                                "continuation",
+                                it.requireString("/continuationItemRenderer/continuationEndpoint/continuationCommand/token")
+                            )
+                        }"
+                    }
 
-            }
+                }
             return JobStepResult.CompleteWith(
                 ExtractResult(errors = errors, pagedData = PagedData(itemList, nextUrl))
             )

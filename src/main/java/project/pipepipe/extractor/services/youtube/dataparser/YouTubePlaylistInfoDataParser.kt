@@ -11,13 +11,15 @@ import project.pipepipe.shared.utils.json.requireString
 
 object YouTubePlaylistInfoDataParser {
     fun parseFromLockupMetadataViewModel(data: JsonNode, overrideName: String? = null): PlaylistInfo {
-        val playlistUrl = data.requireArray("/lockupViewModel/metadata/lockupMetadataViewModel/metadata/contentMetadataViewModel/metadataRows")
+        val playlistUrl = runCatching {
+            PLAYLIST_BASE_URL + data.requireString("/lockupViewModel/rendererContext/commandContext/onTap/innertubeCommand/watchEndpoint/playlistId")
+        }.getOrNull() ?: data.requireArray("/lockupViewModel/metadata/lockupMetadataViewModel/metadata/contentMetadataViewModel/metadataRows")
             .firstNotNullOf {
                 runCatching {
                     PLAYLIST_BASE_URL + it.requireString("/metadataParts/0/text/commandRuns/0/onTap/innertubeCommand/watchEndpoint/playlistId")
                 }.getOrNull()
             }
-        println(playlistUrl)
+
         val uploaderUrl = data.requireArray("/lockupViewModel/metadata/lockupMetadataViewModel/metadata/contentMetadataViewModel/metadataRows")
             .firstNotNullOf {
                 runCatching {
@@ -32,7 +34,7 @@ object YouTubePlaylistInfoDataParser {
             url = playlistUrl,
             serviceId = "YOUTUBE",
             name = data.requireString("/lockupViewModel/metadata/lockupMetadataViewModel/title/content"),
-            uploaderName = overrideName,
+            uploaderName = overrideName?:data.requireString("/lockupViewModel/metadata/lockupMetadataViewModel/metadata/contentMetadataViewModel/metadataRows/0/metadataParts/0/text/content"),
             uploaderUrl = uploaderUrl,
         )
     }

@@ -121,7 +121,7 @@ object YouTubeRequestHelper {
         val bodyMap = mapOf(
             "params" to "wgYCCAA%3D",
             "context" to DESKTOP_CONTEXT,
-            "browseId" to "VL$id"
+            "browseId" to if (id.startsWith("VL")) id else "VL$id"
         )
         return objectMapper.writeValueAsString(bodyMap)
     }
