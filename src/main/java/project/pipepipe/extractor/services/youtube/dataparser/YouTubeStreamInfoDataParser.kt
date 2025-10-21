@@ -42,7 +42,8 @@ object YouTubeStreamInfoDataParser {
             when (isLive) {
                 false -> {
                     streamType = StreamType.VIDEO_STREAM
-                    uploadDate = TimeAgoParser.parseToTimestamp(data.requireString("/videoRenderer/publishedTimeText/simpleText"))
+                    uploadDate =
+                       runCatching { TimeAgoParser.parseToTimestamp(data.requireString("/videoRenderer/publishedTimeText/simpleText")) }.getOrNull()
                     duration = parseDurationString(data.requireString("/videoRenderer/lengthText/simpleText"))
                     viewCount = runCatching { data.requireString("/videoRenderer/viewCountText/simpleText").extractDigitsAsLong() }.getOrNull()
                 }
