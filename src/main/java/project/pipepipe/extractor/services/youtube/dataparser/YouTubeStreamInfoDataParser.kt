@@ -94,30 +94,37 @@ object YouTubeStreamInfoDataParser {
     fun parseFromLockupViewModel(data: JsonNode, overrideChannelName: String? = null, overrideChannelId: String? = null): StreamInfo {
         val useOverride = overrideChannelName != null && overrideChannelId != null
         val metadataRows = data.requireArray("/lockupViewModel/metadata/lockupMetadataViewModel/metadata/contentMetadataViewModel/metadataRows")
-        val hasMultipleRows = metadataRows.size() > 1 // member-only?
-        val metadataRowIndex = if (useOverride && hasMultipleRows) 1 else if (useOverride) 0 else 1
 
-        val isLive = if (useOverride && !hasMultipleRows) {
-            false
-        } else {
-            runCatching {
-                data.requireString("/lockupViewModel/metadata/lockupMetadataViewModel/metadata/contentMetadataViewModel/metadataRows/$metadataRowIndex/metadataParts/0/text/content").contains("watching")
-            }.getOrDefault(false)
+        //  collect
+        val allMetadataTexts = mutableListOf<String>()
+        for (row in metadataRows) {
+            val parts = row.get("metadataParts")?.takeIf { it.isArray } ?: continue
+            for (part in parts) {
+                val content = part.get("text")?.get("content")?.asText()
+                if (content != null) {
+                    allMetadataTexts.add(content)
+                }
+            }
         }
 
-        val viewCount = if (useOverride && !hasMultipleRows) {
-            null
-        } else {
-            runCatching {
-                data.requireString("/lockupViewModel/metadata/lockupMetadataViewModel/metadata/contentMetadataViewModel/metadataRows/$metadataRowIndex/metadataParts/0/text/content").extractDigitsAsLong()
-            }.getOrNull()
+        // analyze
+        val isLive = allMetadataTexts.any { it.contains("watching", ignoreCase = true) }
+        val uploadDate = allMetadataTexts.firstOrNull { it.contains("ago", ignoreCase = true) }?.let {
+            TimeAgoParser.parseToTimestamp(it)
         }
+        val viewCount = allMetadataTexts.firstOrNull {
+            it.contains("view", ignoreCase = true)
+        }?.let {
+            runCatching { it.extractDigitsAsLong() }.getOrNull()
+        }
+        val uploaderName = overrideChannelName ?: data.requireString("/lockupViewModel/metadata/lockupMetadataViewModel/metadata/contentMetadataViewModel/metadataRows/0/metadataParts/0/text/content")
+
 
         return StreamInfo(
             url = STREAM_URL + data.requireString("/lockupViewModel/contentId"),
             serviceId = "YOUTUBE",
             name = data.requireString("/lockupViewModel/metadata/lockupMetadataViewModel/title/content"),
-            uploaderName = overrideChannelName ?: data.requireString("/lockupViewModel/metadata/lockupMetadataViewModel/metadata/contentMetadataViewModel/metadataRows/0/metadataParts/0/text/content"),
+            uploaderName = uploaderName,
             uploaderUrl = if (useOverride) {
                 CHANNEL_URL + overrideChannelId
             } else {
@@ -126,7 +133,10 @@ object YouTubeStreamInfoDataParser {
             uploaderAvatarUrl = if (useOverride) {
                 null
             } else {
-                data.requireArray("/lockupViewModel/metadata/lockupMetadataViewModel/image/decoratedAvatarViewModel/avatar/avatarViewModel/image/sources").last().requireString("url")
+                runCatching{
+                    data.requireArray("/lockupViewModel/metadata/lockupMetadataViewModel/image/decoratedAvatarViewModel/avatar/avatarViewModel/image/sources")
+                        .last().requireString("url")
+                }.getOrNull()
             },
             thumbnailUrl = data.requireArray("/lockupViewModel/contentImage/thumbnailViewModel/image/sources").last().requireString("url"),
             viewCount = viewCount
@@ -136,16 +146,11 @@ object YouTubeStreamInfoDataParser {
             } else {
                 streamType = StreamType.VIDEO_STREAM
                 duration = extractDuration(data)
-
-                // 当 override 为 true 且只有一行时，uploadDate 使用 metadataParts/0
-                uploadDate = if (useOverride && !hasMultipleRows) {
-                    TimeAgoParser.parseToTimestamp(data.requireString("/lockupViewModel/metadata/lockupMetadataViewModel/metadata/contentMetadataViewModel/metadataRows/0/metadataParts/0/text/content"))
-                } else {
-                    TimeAgoParser.parseToTimestamp(data.requireString("/lockupViewModel/metadata/lockupMetadataViewModel/metadata/contentMetadataViewModel/metadataRows/$metadataRowIndex/metadataParts/1/text/content"))
-                }
+                uploadDate?.let { this.uploadDate = it }
             }
         }
     }
+
 
     private fun extractDuration(data: JsonNode): Long? {
         val paths = listOf(
