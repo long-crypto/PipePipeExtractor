@@ -30,8 +30,11 @@ object TimeAgoParser {
 
     /**
      * Parses "X time ago" format and returns epoch timestamp in milliseconds
+     * @throws IllegalStateException if the input cannot be parsed
      */
     fun parseToTimestamp(textualDate: String): Long {
+        require(textualDate.isNotBlank()) { "Textual date cannot be blank" }
+
         val now = OffsetDateTime.now(ZoneOffset.UTC)
 
         // Check special cases first
@@ -52,8 +55,11 @@ object TimeAgoParser {
 
     /**
      * Parses duration text and returns duration in seconds
+     * @throws IllegalStateException if the input cannot be parsed
      */
     fun parseDuration(textualDuration: String): Long {
+        require(textualDuration.isNotBlank()) { "Textual duration cannot be blank" }
+
         val amount = extractAmount(textualDuration)
         val unit = extractTimeUnit(textualDuration)
 
@@ -61,10 +67,20 @@ object TimeAgoParser {
     }
 
     private fun extractAmount(text: String): Int {
+        val numberStr = text.replace(Regex("\\D+"), "")
+
+        if (numberStr.isEmpty()) {
+            error("Failed to extract amount from: '$text'")
+        }
+
         return try {
-            text.replace(Regex("\\D+"), "").toInt()
+            numberStr.toInt().also {
+                if (it <= 0) {
+                    error("Amount must be positive, got: $it from '$text'")
+                }
+            }
         } catch (e: NumberFormatException) {
-            1 // Default to 1 if no number found (as in "a second ago")
+            error("Failed to parse amount from: '$text'")
         }
     }
 
@@ -75,7 +91,7 @@ object TimeAgoParser {
             patterns.any { pattern ->
                 textContainsPattern(lowerText, pattern)
             }
-        }?.key ?: ChronoUnit.SECONDS // Default to seconds if no match
+        }?.key ?: error("Failed to extract time unit from: '$text'")
     }
 
     private fun textContainsPattern(text: String, pattern: String): Boolean {
