@@ -99,7 +99,7 @@ class BilibiliService(id: String) : StreamingService(id) {
                 TrendingInfo("$TRENDING_RAW_URL?name=trending", "BILIBILI", "trending"),
                 TrendingInfo("$TRENDING_RAW_URL?name=recommended_lives", "BILIBILI", "recommended_lives"),
             ),
-            feedFetchInterval = 3000,
+            feedFetchInterval = 500,
             themeColor = "#FB7299"
         )
 }
