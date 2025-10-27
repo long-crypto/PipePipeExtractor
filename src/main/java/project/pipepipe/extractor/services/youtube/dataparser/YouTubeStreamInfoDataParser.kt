@@ -75,11 +75,38 @@ object YouTubeStreamInfoDataParser {
 //    }
 
     fun parseFromPlaylistVideoRenderer(data: JsonNode): StreamInfo {
+        val videoInfo = runCatching { data.requireObject("/playlistVideoRenderer/videoInfo") }.getOrNull()
+        var viewCount: Long? = null
+        var uploadDate: Long? = null
+
+        when {
+            videoInfo?.has("simpleText") == true -> {
+                uploadDate = runCatching {
+                    TimeAgoParser.parseToTimestamp(videoInfo.requireString("simpleText"))
+                }.getOrNull()
+            }
+            videoInfo?.has("runs") == true -> {
+                val runs = videoInfo.requireArray("runs")
+                runs.forEach { run ->
+                    val text = runCatching{ run.requireString("text") }.getOrNull() ?: return@forEach
+
+                    if (viewCount == null && text.contains("view", ignoreCase = true)) {
+                        viewCount = text.extractDigitsAsLong()
+                    }
+
+                    if (uploadDate == null && text.contains("ago", ignoreCase = true)) {
+                        uploadDate = runCatching { TimeAgoParser.parseToTimestamp(text) }.getOrNull()
+                    }
+                }
+            }
+        }
         return StreamInfo(
             url = STREAM_URL + data.requireString("/playlistVideoRenderer/videoId"),
             serviceId = "YOUTUBE",
+            viewCount = viewCount,
             streamType = StreamType.VIDEO_STREAM,
             duration = runCatching{ parseDurationString(data.requireString("/playlistVideoRenderer/lengthText/simpleText")) }.getOrNull(),
+            uploadDate = uploadDate,
             name = data.requireString("/playlistVideoRenderer/title/runs/0/text"),
             uploaderName = runCatching { data.requireString("/playlistVideoRenderer/shortBylineText/runs/0/text") }.getOrNull(),
             uploaderUrl = runCatching{ CHANNEL_URL + data.requireString("/playlistVideoRenderer/shortBylineText/runs/0/navigationEndpoint/browseEndpoint/browseId") }.getOrNull(),
