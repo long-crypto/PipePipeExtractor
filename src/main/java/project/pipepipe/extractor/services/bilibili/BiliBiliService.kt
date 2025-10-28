@@ -8,6 +8,7 @@ import project.pipepipe.extractor.services.bilibili.extractor.BiliBiliCookieExtr
 import project.pipepipe.extractor.utils.RequestHelper.stringToURI
 import project.pipepipe.shared.infoitem.SupportedServiceInfo
 import project.pipepipe.shared.infoitem.TrendingInfo
+import project.pipepipe.shared.infoitem.ExternalUrlType
 import project.pipepipe.shared.infoitem.helper.SearchFilterGroup
 import project.pipepipe.shared.infoitem.helper.SearchFilterItem
 import project.pipepipe.shared.infoitem.helper.SearchType
@@ -100,6 +101,25 @@ class BilibiliService(id: String) : StreamingService(id) {
                 TrendingInfo("$TRENDING_RAW_URL?name=recommended_lives", "BILIBILI", "recommended_lives"),
             ),
             feedFetchInterval = 500,
-            themeColor = "#FB7299"
+            themeColor = "#FB7299",
+            urlPatterns = mapOf(
+                ExternalUrlType.STREAM to listOf(
+                    "(bilibili\\.com|b23\\.tv)",
+                    "bilibili\\.com/video/(BV|av)",
+                    "bilibili\\.com/bangumi/play/",
+                    "[?&](bvid|aid)=",
+                    "live\\.bilibili\\.com"
+                ),
+                ExternalUrlType.CHANNEL to listOf(
+                    "space\\.bilibili\\.com/",
+                    "/space/",
+                    "[?&]mid="
+                ),
+                ExternalUrlType.PLAYLIST to listOf(
+                    "api\\.bilibili\\.com/x/polymer/web-space/seasons_archives_list",
+                    "api\\.bilibili\\.com/x/series/archives",
+                    "api\\.bilibili\\.com/x/player/pagelist"
+                )
+            )
         )
 }

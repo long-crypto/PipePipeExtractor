@@ -10,6 +10,7 @@ import project.pipepipe.extractor.services.niconico.NicoNicoLinks.SUGGESTION_URL
 import project.pipepipe.extractor.services.niconico.NicoNicoLinks.TRENDING_RAW_URL
 import project.pipepipe.shared.infoitem.SupportedServiceInfo
 import project.pipepipe.shared.infoitem.TrendingInfo
+import project.pipepipe.shared.infoitem.ExternalUrlType
 import project.pipepipe.shared.infoitem.helper.SearchFilterGroup
 import project.pipepipe.shared.infoitem.helper.SearchFilterItem
 import project.pipepipe.shared.infoitem.helper.SearchType
@@ -96,6 +97,20 @@ class NicoNicoService(id: String): StreamingService(id)  {
             themeColor = "#9e9e9e",
             trendingList = listOf(
                 TrendingInfo("$TRENDING_RAW_URL?name=trending", "NICONICO", "trending")
+            ),
+            urlPatterns = mapOf(
+                ExternalUrlType.STREAM to listOf(
+                    "nicovideo\\.jp/watch/",
+                    "nico\\.ms/"
+                ),
+                ExternalUrlType.CHANNEL to listOf(
+                    "nicovideo\\.jp/user/",
+                    "ch\\.nicovideo\\.jp/"
+                ),
+                ExternalUrlType.PLAYLIST to listOf(
+                    "/mylist/",
+                    "/series/"
+                )
             )
         )
 }

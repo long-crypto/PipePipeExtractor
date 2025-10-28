@@ -8,6 +8,7 @@ import project.pipepipe.extractor.services.youtube.YouTubeLinks.GET_SUGGESTION_U
 import project.pipepipe.extractor.services.youtube.YouTubeLinks.SEARCH_RAW_URL
 import project.pipepipe.shared.infoitem.SupportedServiceInfo
 import project.pipepipe.shared.infoitem.TrendingInfo
+import project.pipepipe.shared.infoitem.ExternalUrlType
 import project.pipepipe.shared.infoitem.helper.SearchFilterGroup
 import project.pipepipe.shared.infoitem.helper.SearchFilterItem
 import project.pipepipe.shared.infoitem.helper.SearchType
@@ -98,6 +99,27 @@ class YouTubeService(id: String) : StreamingService(id)  {
                 TrendingInfo("$TRENDING_RAW_URL?name=trending", "YOUTUBE", "trending"),
                 TrendingInfo("$TRENDING_RAW_URL?name=recommended_lives", "YOUTUBE", "recommended_lives"),
             ),
-            themeColor = "#e53935"
+            themeColor = "#e53935",
+            urlPatterns = mapOf(
+                ExternalUrlType.STREAM to listOf(
+                    "youtube\\.com/watch",
+                    "youtu\\.be/",
+                    "youtube\\.com/(embed|live|shorts|v|w)/",
+                    "youtube-nocookie\\.com/embed/",
+                    "hooktube\\.com",
+                    "invidio\\.us",
+                    "invidious\\.",
+                    "yewtu\\.be",
+                    "piped\\.",
+                    "y2u\\.be"
+                ),
+                ExternalUrlType.CHANNEL to listOf(
+                    "youtube\\.com/@",
+                    "youtube\\.com/(user|channel|c)/"
+                ),
+                ExternalUrlType.PLAYLIST to listOf(
+                    "youtube\\.com/playlist\\?list="
+                )
+            )
         )
 }
