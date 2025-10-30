@@ -32,7 +32,7 @@ object YouTubeRequestHelper {
             "gl" to "US",
             "clientName" to "WEB",
             "originalUrl" to "https://www.youtube.com",
-            "clientVersion" to "2.20251017.01.00",
+            "clientVersion" to "2.20251029.01.00",
             "platform" to "DESKTOP"
         ),
         "user" to mapOf(
@@ -55,7 +55,7 @@ object YouTubeRequestHelper {
                     "clientName" to "ANDROID",
                     "gl" to "US",
                     "clientScreen" to "WATCH",
-                    "clientVersion" to "19.28.35",
+                    "clientVersion" to "20.10.38",
                     "osName" to "Android",
                     "platform" to "MOBILE"
                 ),
