@@ -26,6 +26,12 @@ object YouTubeStreamInfoDataParser {
             }.getOrDefault(false)
         }
 
+        val _isShort = when {
+            runCatching { data.requireString("/videoRenderer/navigationEndpoint/commandMetadata/webCommandMetadata/webPageType") }.getOrNull() == "WEB_PAGE_TYPE_SHORTS" -> true
+            runCatching{ data.requireObject("navigationEndpoint").has("reelWatchEndpoint") }.getOrNull() == true -> true
+            else -> false
+        }
+
         return StreamInfo(
             url = STREAM_URL + data.requireString("/videoRenderer/videoId"),
             serviceId = "YOUTUBE",
@@ -46,11 +52,11 @@ object YouTubeStreamInfoDataParser {
                        runCatching { TimeAgoParser.parseToTimestamp(data.requireString("/videoRenderer/publishedTimeText/simpleText")) }.getOrNull()
                     duration = parseDurationString(data.requireString("/videoRenderer/lengthText/simpleText"))
                     viewCount = runCatching { data.requireString("/videoRenderer/viewCountText/simpleText").extractDigitsAsLong() }.getOrNull()
+                    isShort = _isShort
                 }
                 true -> {
                     streamType = StreamType.LIVE_STREAM
                     viewCount = data.requireString("/videoRenderer/viewCountText/runs/0/text").extractDigitsAsLong()
-                    isShort = false //todo
                 }
             }
         }
