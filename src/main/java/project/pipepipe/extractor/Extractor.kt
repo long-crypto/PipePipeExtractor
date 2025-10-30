@@ -39,14 +39,8 @@ abstract class Extractor<META: Info, DATA: Info>(
         cookie: String?
     ): JobStepResult = JobStepResult.CompleteWith(ExtractResult())
 
-    //TODO: getAllPages
-
     fun addError(throwable: Throwable) {
         _errors.add(throwable)
-    }
-
-    fun addAllErrors(throwables: Collection<Throwable>) {
-        _errors.addAll(throwables)
     }
 
     // used to set **single** property of a metaInfo

@@ -62,24 +62,6 @@ object YouTubeStreamInfoDataParser {
         }
     }
 
-//    fun parseShortsRenderer(data: JsonNode): StreamInfo {
-//        return StreamInfo(
-//            url = BASE_URL + data.requireString("/videoRenderer/videoId"),
-//            serviceId = "YOUTUBE",
-//            name = data.requireString("/videoRenderer/title/runs/0/text"),
-//            streamType = StreamType.VIDEO_STREAM,
-//            uploaderName = data.requireString("/videoRenderer/longBylineText/runs/0/text"),
-//            uploaderUrl = data.requireString("/videoRenderer/longBylineText/runs/0/navigationEndpoint/browseEndpoint/browseId"),
-//            uploaderAvatarUrl = data.requireArray("/videoRenderer/channelThumbnailSupportedRenderers/channelThumbnailWithLinkRenderer/thumbnail/thumbnails").first().requireString("url"),
-//            uploadDate = TimeAgoParser.parseToTimestamp(data.requireString("/videoRenderer/publishedTimeText")),
-//            duration = parseDurationString(data.requireString("/videoRenderer/lengthText/simpleText")),
-//            viewCount = data.requireString("/videoRenderer/viewCountText/simpleText").extractDigitsAsLong(),
-//            shortFormContent = false, //todo
-//            thumbnailUrl = data.requireArray("/videoRenderer/thumbnail/thumbnails").last().requireString("url"),
-//            isPaid = data.requireString("/videoRenderer/badges/0/metadataBadgeRenderer/style") == "BADGE_STYLE_TYPE_MEMBERS_ONLY",
-//        )
-//    }
-
     fun parseFromPlaylistVideoRenderer(data: JsonNode): StreamInfo {
         val videoInfo = runCatching { data.requireObject("/playlistVideoRenderer/videoInfo") }.getOrNull()
         var viewCount: Long? = null

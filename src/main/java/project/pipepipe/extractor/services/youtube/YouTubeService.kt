@@ -56,7 +56,7 @@ class YouTubeService(id: String) : StreamingService(id)  {
             onlyOneCheckable = true,
             availableSearchFilterItems = listOf(
                 SearchFilterItem("duration_short", "duration=duration_short"),
-                SearchFilterItem("duration_medium", "duration=duration_medium"), //todo:?
+                SearchFilterItem("duration_medium", "duration=duration_medium"),
                 SearchFilterItem("duration_long", "duration=duration_long"),
             )
         ),
