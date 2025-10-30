@@ -70,7 +70,7 @@ class YouTubeSearchExtractor(url: String): SearchExtractor(url) {
 
             val continuation = data.first {it.has("continuationItemRenderer")}.requireString("/continuationItemRenderer/continuationEndpoint/continuationCommand/token")
             return JobStepResult.CompleteWith(ExtractResult(errors = errors, pagedData = PagedData(
-                itemList, "$SEARCH_RAW_URL?continuation=$continuation"
+                itemList, "$SEARCH_RAW_URL?continuation=$continuation&type=${getQueryValue(url, "type")}"
             )))
         }
     }
