@@ -61,10 +61,6 @@ class YouTubePlaylistExtractor(
                             "$url&continuation=${it.requireString("/continuationItemRenderer/continuationEndpoint/commandExecutorCommand/commands/1/continuationCommand/token")}"
                     }
                 }
-
-            println(789)
-            println(result.requireString("/microformat/microformatDataRenderer/urlCanonical")
-                .setType("https"))
             return JobStepResult.CompleteWith(
                 ExtractResult(
                     info = PlaylistInfo(
