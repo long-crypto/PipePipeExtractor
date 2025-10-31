@@ -56,7 +56,7 @@ object YouTubeStreamInfoDataParser {
                 }
                 true -> {
                     streamType = StreamType.LIVE_STREAM
-                    viewCount = data.requireString("/videoRenderer/viewCountText/runs/0/text").extractDigitsAsLong()
+                    viewCount = runCatching{ data.requireString("/videoRenderer/viewCountText/runs/0/text").extractDigitsAsLong() }.getOrNull()
                 }
             }
         }
