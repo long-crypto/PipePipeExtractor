@@ -227,7 +227,7 @@ class YouTubeStreamExtractor(
                 tags = safeGet{ playData.requireArray("/playerResponse/videoDetails/keywords").map { it.asText() } },
                 commentUrl = safeGet { "$COMMENT_RAW_URL?continuation=${nextData.requireArray("/contents/twoColumnWatchNextResults/results/results/contents").firstNotNullOfOrNull {
                    runCatching { it.requireString("/itemSectionRenderer/contents/0/continuationItemRenderer/continuationEndpoint/continuationCommand/token") }.getOrNull()
-                }}" },
+                }!!}" },
                 relatedItemUrl = "cache://${sessionId}",
                 headers = hashMapOf("User-Agent" to "com.google.android.youtube/19.28.35 (Linux; U; Android 15; GB) gzip")
             ).apply {
