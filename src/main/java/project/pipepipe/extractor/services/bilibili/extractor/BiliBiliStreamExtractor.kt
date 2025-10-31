@@ -71,7 +71,16 @@ class BiliBiliStreamExtractor(
         clientResults: List<TaskResult>,
         cookie: String
     ): JobStepResult {
-        val watchData = clientResults.first { it.taskId == "info" }.result!!.asJson().requireObject("data")
+        val watchDataRaw = clientResults.first { it.taskId == "info" }.result!!.asJson()
+        if (watchDataRaw.requireInt("code") != 0) {
+            return JobStepResult.FailWith(
+                ErrorDetail(
+                    code = "UNAV_001",
+                    stackTrace = IllegalStateException(runCatching{ watchDataRaw.requireString("message") }.getOrDefault("Content not available")).stackTraceToString()
+                )
+            )
+        }
+        val watchData = watchDataRaw.requireObject("data")
         val tagData = clientResults.first { it.taskId == "tags" }.result!!.asJson().requireArray("data")
         val videoshotData = clientResults.firstOrNull { it.taskId == "videoshot" }?.result?.asJson()
         val pageNumString = getQueryValue(

@@ -25,7 +25,7 @@ object BiliBiliUrlRouter {
             url.contains(SEARCH_BASE_URL) -> BiliBiliSearchExtractor(url)
             url.contains(LIVE_BASE_URL) -> BiliBiliLiveStreamExtractor(url)
             acceptsPlaylistUrl(url) -> BiliBiliPlaylistExtractor(url)
-            acceptsStreamUrl(url) -> BiliBiliStreamExtractor(url)
+            acceptsStreamUrl(url) -> BiliBiliStreamExtractor(BiliBiliUrlParser.urlFromStreamID(BiliBiliUrlParser.parseStreamId(url)!!))
             acceptsChannelUrl(url) -> BiliBiliChannelMainTabExtractor(url)
             else -> null
         }
