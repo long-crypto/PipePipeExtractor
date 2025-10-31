@@ -93,8 +93,6 @@ class BilibiliService(id: String) : StreamingService(id) {
                 SearchType("videos", "$SEARCH_BASE_URL?search_type=video&keyword=", sortFilters),
                 SearchType("lives", "$SEARCH_BASE_URL?search_type=live_room&keyword="),
                 SearchType("channels", "$SEARCH_BASE_URL?search_type=bili_user&keyword="),
-                SearchType("animes", "$SEARCH_BASE_URL?search_type=media_bangumi&keyword="),
-                SearchType("movies_and_tv", "$SEARCH_BASE_URL?search_type=media_ft&keyword=")
             ),
             trendingList = listOf(
                 TrendingInfo("$TRENDING_RAW_URL?name=trending", "BILIBILI", "trending"),
