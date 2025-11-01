@@ -118,7 +118,7 @@ class BiliBiliChannelMainTabExtractor(url: String) : Extractor<ChannelInfo, Stre
             val hasNext = runCatching{
                 ceil(
                     userVideoData.requireInt("/data/page/count").toDouble() / userVideoData.requireInt("/data/page/ps")
-                ).toInt() == pn
+                ).toInt() != pn
             }.getOrDefault(false)
             return JobStepResult.CompleteWith(ExtractResult(
                 errors = errors,
