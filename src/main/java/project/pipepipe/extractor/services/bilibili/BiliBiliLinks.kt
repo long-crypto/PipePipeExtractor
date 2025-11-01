@@ -21,7 +21,7 @@ object BiliBiliLinks {
     const val GET_SEASON_ARCHIVES_ARCHIVE_BASE_URL = "https://api.bilibili.com/x/polymer/web-space/seasons_archives_list"
     const val GET_SUGGESTION_URL = "https://s.search.bilibili.com/main/suggest?term="
     const val GET_RELATED_URL = "https://api.bilibili.com/x/web-interface/archive/related?bvid="
-    const val COMMENT_REPLIES_URL = "https://api.bilibili.com/x/v2/reply/reply?type=1&ps=10&pn=1&web_location=333.788&oid="
+    const val COMMENT_REPLIES_URL = "https://api.bilibili.com/x/v2/reply/reply?type=1&ps=10&web_location=333.788&oid="
     const val GET_SUBTITLE_META_URL = "https://api.bilibili.com/x/player/wbi/v2"
     const val QUERY_USER_VIDEOS_WEB_API_URL = "https://api.bilibili.com/x/space/wbi/arc/search"
     const val QUERY_USER_VIDEOS_CLIENT_API_URL = "https://app.bilibili.com/x/v2/space/archive/cursor"

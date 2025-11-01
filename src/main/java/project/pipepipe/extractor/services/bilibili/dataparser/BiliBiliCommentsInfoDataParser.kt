@@ -49,13 +49,13 @@ object BiliBiliCommentsInfoDataParser {
                                 data.requireLong("root") == data.requireLong("rpid"))
 
                 if (hasReplies) {
-                    "${BiliBiliLinks.COMMENT_REPLIES_URL}${data.requireLong("oid")}&root=${data.requireLong("rpid")}"
+                    "${BiliBiliLinks.COMMENT_REPLIES_URL}${data.requireLong("oid")}&pn=1&root=${data.requireLong("rpid")}"
                 } else null
             }
         }
 
         CommentInfo(
-            url = "${BiliBiliLinks.COMMENT_REPLIES_URL}${data.requireLong("oid")}&root=${data.requireLong("rpid")}",
+            url = "${BiliBiliLinks.COMMENT_REPLIES_URL}${data.requireLong("oid")}&pn=1&root=${data.requireLong("rpid")}",
             content = getCommentText(),
             authorName = data.requireObject("member").requireString("uname"),
             authorAvatarUrl = data.requireObject("member").requireString("avatar").replace("http:", "https:"),
